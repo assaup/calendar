@@ -22,8 +22,10 @@
 }
 
 .month {
-  letter-spacing: -0.3px;
-  min-width: 170px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  min-width: 180px;
 }
 
 .count {

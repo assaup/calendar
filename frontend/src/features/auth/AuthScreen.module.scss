@@ -28,15 +28,18 @@
   align-items: center;
   gap: 10px;
   font-size: 22px;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.5px;
   margin-bottom: $space-xl;
 }
 
 .tagline {
-  font-size: 34px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.5px;
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1.25;
+  font-weight: 400;
+  letter-spacing: 0.3px;
   margin: 0 0 $space-md;
 }
 

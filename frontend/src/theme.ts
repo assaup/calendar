@@ -19,6 +19,10 @@ export const theme = createTheme({
   colors: { brand },
   fontFamily:
     '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-  defaultRadius: 'md',
+  defaultRadius: 'lg',
   cursorType: 'pointer',
+  components: {
+    // pill-кнопки в духе референса
+    Button: { defaultProps: { radius: 'xl' } },
+  },
 });

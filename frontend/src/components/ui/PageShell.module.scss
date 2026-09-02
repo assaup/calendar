@@ -14,7 +14,9 @@
 }
 
 .title {
-  letter-spacing: -0.3px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.5px;
 }
 
 .action {

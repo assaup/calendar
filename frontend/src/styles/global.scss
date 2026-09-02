@@ -2,24 +2,56 @@
 
 // ------------------------------------------------------------------
 // Цветовые токены под светлую и тёмную тему.
-// Mantine ставит на <html> атрибут data-mantine-color-scheme="light|dark".
-// Мы объявляем свои CSS-переменные, чтобы кастомные компоненты тоже
-// автоматически переключались. Правь цвета здесь.
+// Светлая — розовая палитра (в духе референса), тёмная — нейтральная тёмная.
+// Mantine ставит на <html> data-mantine-color-scheme="light|dark".
 // ------------------------------------------------------------------
 
-:root,
-[data-mantine-color-scheme='light'] {
-  --app-bg: #f4f5fb;
-  --app-surface: #fff;
-  --app-surface-2: #eef1f9;
-  --app-border: #e5e8f2;
-  --app-text: #1a1d29;
-  --app-text-dim: #6a7288;
-  --app-accent: #4c6ef5;
-  --app-accent-soft: #eef2ff;
-  --app-shadow: 0 6px 20px rgb(60 70 120 / 10%);
+:root {
+  --font-display: 'Russo One', 'Segoe UI', sans-serif;
 }
 
+// --- Светлая тема (розовая) ---
+:root,
+[data-mantine-color-scheme='light'] {
+  --app-bg: #fceaf2;
+  --app-surface: #fff;
+  --app-surface-2: #fbe0ec;
+  --app-border: #f6cfe0;
+  --app-text: #3e2230;
+  --app-text-dim: #a06b84;
+  --app-accent: #e5449a;
+  --app-accent-soft: #fce1ef;
+  --app-frame: #ec57a2;
+  --app-shadow: 0 6px 20px rgb(200 60 130 / 14%);
+}
+
+// Перекрашиваем брендовый цвет Mantine в светлой теме в розовый
+// (в тёмной остаётся индиго из theme.ts). html[...] — чтобы перебить
+// переменные, которые Mantine инжектит в рантайме.
+html[data-mantine-color-scheme='light'] {
+  --mantine-color-brand-0: #fff0f6;
+  --mantine-color-brand-1: #ffdeeb;
+  --mantine-color-brand-2: #fcc2d7;
+  --mantine-color-brand-3: #faa2c1;
+  --mantine-color-brand-4: #f783ac;
+  --mantine-color-brand-5: #f06595;
+  --mantine-color-brand-6: #e64980;
+  --mantine-color-brand-7: #d6336c;
+  --mantine-color-brand-8: #c2255c;
+  --mantine-color-brand-9: #a61e4d;
+  --mantine-color-brand-filled: #e5449a;
+  --mantine-color-brand-filled-hover: #d6336c;
+  --mantine-color-brand-light: rgb(229 68 154 / 12%);
+  --mantine-color-brand-light-hover: rgb(229 68 154 / 20%);
+  --mantine-color-brand-light-color: #c2255c;
+  --mantine-primary-color-filled: #e5449a;
+  --mantine-primary-color-filled-hover: #d6336c;
+  --mantine-primary-color-light: rgb(229 68 154 / 12%);
+  --mantine-primary-color-light-hover: rgb(229 68 154 / 20%);
+  --mantine-primary-color-light-color: #c2255c;
+}
+
+// --- Тёмная тема (нейтральная, без розового) ---
 [data-mantine-color-scheme='dark'] {
   --app-bg: #17181c;
   --app-surface: #1f2126;
@@ -29,6 +61,7 @@
   --app-text-dim: #9aa0aa;
   --app-accent: #91a7ff;
   --app-accent-soft: #24273a;
+  --app-frame: transparent;
   --app-shadow: 0 4px 14px rgb(0 0 0 / 40%);
 }
 
@@ -50,6 +83,19 @@ body {
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+// Яркая розовая рамка вокруг приложения — только в светлой теме
+[data-mantine-color-scheme='light'] body {
+  background: var(--app-frame);
+  padding: 10px;
+}
+
+[data-mantine-color-scheme='light'] #root {
+  border-radius: 22px;
+  overflow: hidden;
+  background: var(--app-bg);
+  box-shadow: 0 10px 40px rgb(180 40 110 / 25%);
 }
 
 a {

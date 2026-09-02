@@ -16,9 +16,10 @@
 }
 
 .brandName {
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-weight: 400;
   font-size: 17px;
-  letter-spacing: -0.2px;
+  letter-spacing: 0.5px;
 }
 
 .nav {
