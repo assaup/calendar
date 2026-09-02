@@ -45,9 +45,18 @@ interface TasksState {
   updateTask: (id: string, patch: Partial<Omit<Task, 'id'>>) => void;
   deleteTask: (id: string) => void;
   toggleDone: (id: string) => void;
+  // переставить задачу в общем списке (для порядка внутри дня и колонок)
+  moveTask: (activeId: string, overId: string) => void;
   addCategory: (name: string, color: string) => string;
   updateCategory: (id: string, patch: Partial<Omit<Category, 'id'>>) => void;
   deleteCategory: (id: string) => void;
+}
+
+function arrayMove<T>(arr: T[], from: number, to: number): T[] {
+  const next = arr.slice();
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
 }
 
 const uid = () =>
@@ -152,6 +161,14 @@ export const useTasksStore = create<TasksState>()(
               : t,
           ),
         })),
+
+      moveTask: (activeId, overId) =>
+        set((s) => {
+          const from = s.tasks.findIndex((t) => t.id === activeId);
+          const to = s.tasks.findIndex((t) => t.id === overId);
+          if (from < 0 || to < 0 || from === to) return s;
+          return { tasks: arrayMove(s.tasks, from, to) };
+        }),
 
       addCategory: (name, color) => {
         const id = uid();

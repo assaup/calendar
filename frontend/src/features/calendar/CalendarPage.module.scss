@@ -26,6 +26,16 @@
   min-width: 170px;
 }
 
+.count {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--app-surface-2);
+  color: var(--app-text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .nav {
   display: flex;
   align-items: center;

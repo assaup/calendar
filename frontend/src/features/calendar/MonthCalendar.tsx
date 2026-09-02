@@ -18,10 +18,11 @@ import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
 import styles from './MonthCalendar.module.scss';
 
-const DATE_ROW_H = 36;
-const BAR_H = 22;
-const BAR_GAP = 4;
+const DATE_ROW_H = 34;
+const BAR_H = 28;
+const BAR_GAP = 5;
 const MIN_LANES = 2;
+const ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 interface Segment {
   task: Task;
@@ -61,7 +62,7 @@ function buildWeeks(month: Dayjs, tasks: Task[]): WeekData[] {
     const days = Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day'));
 
     const raw = tasks
-      .map((task) => {
+      .map((task, index) => {
         const range = taskRange(task);
         if (!range) return null;
         if (range.end.isBefore(weekStart) || range.start.isAfter(weekEnd)) {
@@ -73,14 +74,21 @@ function buildWeeks(month: Dayjs, tasks: Task[]): WeekData[] {
         const segEnd = range.end.isAfter(weekEnd) ? weekEnd : range.end;
         return {
           task,
+          index, // порядок в общем списке — задаёт очередность внутри дня
           colStart: segStart.diff(weekStart, 'day'),
           colEnd: segEnd.diff(weekStart, 'day'),
           continuesLeft: range.start.isBefore(weekStart),
           continuesRight: range.end.isAfter(weekEnd),
         };
       })
-      .filter((x): x is Omit<Segment, 'lane'> => x !== null)
-      .sort((a, b) => a.colStart - b.colStart || b.colEnd - a.colEnd);
+      .filter((x): x is Omit<Segment, 'lane'> & { index: number } => x !== null)
+      // многодневные сверху; при равенстве — по порядку в списке
+      .sort(
+        (a, b) =>
+          a.colStart - b.colStart ||
+          b.colEnd - b.colStart - (a.colEnd - a.colStart) ||
+          a.index - b.index,
+      );
 
     const laneEnds: number[] = [];
     const segments: Segment[] = raw.map((seg) => {
@@ -106,7 +114,6 @@ function buildWeeks(month: Dayjs, tasks: Task[]): WeekData[] {
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-// --- Ячейка дня (droppable + быстрый ввод) ---
 function DayCell({
   iso,
   dayNum,
@@ -138,7 +145,6 @@ function DayCell({
   );
 }
 
-// --- Полоса задачи (draggable) ---
 function TaskBar({
   seg,
   color,
@@ -149,25 +155,30 @@ function TaskBar({
   onOpen: (id: string) => void;
 }) {
   const toggleDone = useTasksStore((s) => s.toggleDone);
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: seg.task.id,
-  });
-  const { role, tabIndex, ...a11y } = attributes;
+  const drag = useDraggable({ id: seg.task.id });
+  const drop = useDroppable({ id: seg.task.id });
+  const { role, tabIndex, ...a11y } = drag.attributes;
   const span = seg.colEnd - seg.colStart + 1;
   const done = seg.task.status === 'done';
+
+  const setRef = (el: HTMLDivElement | null) => {
+    drag.setNodeRef(el);
+    drop.setNodeRef(el);
+  };
 
   return (
     // роль и клавиатура заданы через dnd-kit (role/tabIndex/onKeyDown) — доступно
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
-      ref={setNodeRef}
+      ref={setRef}
       role={role}
       tabIndex={tabIndex}
       className={styles.bar}
       data-done={done || undefined}
       data-cont-left={seg.continuesLeft || undefined}
       data-cont-right={seg.continuesRight || undefined}
-      data-dragging={isDragging || undefined}
+      data-dragging={drag.isDragging || undefined}
+      data-over={drop.isOver && !drag.isDragging ? 'true' : undefined}
       style={{
         top: DATE_ROW_H + seg.lane * (BAR_H + BAR_GAP),
         left: `calc(${(seg.colStart / 7) * 100}% + 4px)`,
@@ -182,7 +193,7 @@ function TaskBar({
           onOpen(seg.task.id);
         }
       }}
-      {...listeners}
+      {...drag.listeners}
       {...a11y}
     >
       <button
@@ -197,7 +208,7 @@ function TaskBar({
         }}
         onPointerDown={(e) => e.stopPropagation()}
       >
-        {done && <IconCheck size={11} stroke={3.5} />}
+        {done && <IconCheck size={12} stroke={3.5} />}
       </button>
       <span className={styles.barTitle}>{seg.task.title}</span>
     </div>
@@ -209,6 +220,7 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
   const categories = useTasksStore((s) => s.categories);
   const addTask = useTasksStore((s) => s.addTask);
   const updateTask = useTasksStore((s) => s.updateTask);
+  const moveTask = useTasksStore((s) => s.moveTask);
   const activeWorkspace = useWorkspaceStore((s) => s.activeId);
   const openEdit = useTaskEditor((s) => s.openEdit);
 
@@ -260,16 +272,37 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
 
   const onDragEnd = (e: DragEndEvent) => {
     setDragTask(null);
-    const overIso = e.over?.id as string | undefined;
-    if (!overIso) return;
-    const task = visibleTasks.find((t) => t.id === e.active.id);
-    const range = task ? taskRange(task) : null;
-    if (!task || !range) return;
-    const duration = range.end.diff(range.start, 'day');
-    updateTask(task.id, {
-      startDate: overIso,
-      dueDate: dayjs(overIso).add(duration, 'day').format('YYYY-MM-DD'),
-    });
+    if (!e.over) return;
+    const active = visibleTasks.find((t) => t.id === e.active.id);
+    if (!active) return;
+    const overId = String(e.over.id);
+
+    if (ISO_RE.test(overId)) {
+      // брошено на день — переносим (с сохранением длительности)
+      const range = taskRange(active);
+      if (!range) return;
+      const dur = range.end.diff(range.start, 'day');
+      updateTask(active.id, {
+        startDate: overId,
+        dueDate: dayjs(overId).add(dur, 'day').format('YYYY-MM-DD'),
+      });
+      return;
+    }
+
+    // брошено на другую задачу — меняем порядок (и день, если он другой)
+    const overTask = visibleTasks.find((t) => t.id === overId);
+    if (!overTask) return;
+    const overStart = overTask.startDate ?? overTask.dueDate;
+    const activeStart = active.startDate ?? active.dueDate;
+    if (overStart && activeStart && overStart !== activeStart) {
+      const range = taskRange(active);
+      const dur = range ? range.end.diff(range.start, 'day') : 0;
+      updateTask(active.id, {
+        startDate: overStart,
+        dueDate: dayjs(overStart).add(dur, 'day').format('YYYY-MM-DD'),
+      });
+    }
+    moveTask(active.id, overTask.id);
   };
 
   return (
@@ -293,8 +326,6 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
             const quickCol = week.days.findIndex(
               (d) => d.format('YYYY-MM-DD') === quickDate,
             );
-            // если открыт быстрый ввод — добавляем место под инпут, чтобы он
-            // не вылезал за пределы клетки дня
             const rowHeight =
               DATE_ROW_H +
               week.lanes * (BAR_H + BAR_GAP) +

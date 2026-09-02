@@ -46,6 +46,7 @@
 }
 
 .dayCell {
+  position: relative;
   border: none;
   border-right: 1px solid var(--app-border);
   background: transparent;
@@ -88,13 +89,18 @@
 }
 
 .dayNumber {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 24px;
-  height: 24px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 2px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   border-radius: 50%;
 
   &[data-today] {
@@ -119,23 +125,32 @@
   border: none;
   border-radius: $radius-sm;
   color: #fff;
-  padding: 0 8px;
-  font-size: 12.5px;
+  padding: 0 10px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: grab;
   overflow: hidden;
   box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
   transition:
     transform 0.08s ease,
-    filter 0.1s ease;
+    filter 0.1s ease,
+    box-shadow 0.1s ease;
 
   &:hover {
-    filter: brightness(1.06);
+    filter: brightness(1.08);
     transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgb(0 0 0 / 28%);
   }
 
   &[data-dragging] {
     opacity: 0.35;
+  }
+
+  // подсветка при наведении на карточку для перестановки
+  &[data-over] {
+    box-shadow:
+      0 0 0 2px var(--app-surface),
+      0 0 0 4px var(--app-accent);
   }
 
   &[data-cont-left] {
@@ -159,8 +174,8 @@
 
 .barCheck {
   flex-shrink: 0;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   padding: 0;
   border-radius: 50%;
   border: 1.5px solid rgb(255 255 255 / 75%);
