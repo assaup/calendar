@@ -1,33 +1,191 @@
 @use '../../styles/variables' as *;
 
-.grid {
+.notes {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: $space-md;
+  grid-template-columns: 300px 1fr;
+  gap: $space-lg;
+  height: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
-.note {
-  padding: $space-md;
-  min-height: 120px;
+// -------------------- Список --------------------
+.list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.listHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $space-md;
+}
+
+.heading {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.item {
+  text-align: left;
+  border: 1px solid var(--app-border);
+  background: var(--app-surface);
+  border-radius: $radius-md;
+  padding: 10px $space-md;
   cursor: pointer;
   transition:
-    transform 0.1s ease,
-    box-shadow 0.12s ease;
+    background 0.12s ease,
+    border-color 0.12s ease;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--app-shadow);
+    background: var(--app-surface-2);
+  }
+
+  &[data-active] {
+    border-color: var(--app-accent);
+    background: var(--app-accent-soft);
   }
 }
 
-.noteTitle {
-  font-weight: 600;
+.itemTitle {
   font-size: 15px;
-  margin-bottom: $space-xs;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.noteText {
+.itemMeta {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--app-text-dim);
+}
+
+.itemDate {
+  flex-shrink: 0;
+}
+
+.itemPreview {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.emptyList {
   color: var(--app-text-dim);
   font-size: 14px;
-  line-height: 1.45;
+  padding: $space-md;
+}
+
+// -------------------- Редактор --------------------
+.editor {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: $radius-lg;
+  padding: $space-lg;
+}
+
+.editorBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-sm;
+  margin-bottom: $space-md;
+}
+
+.backBtn {
+  display: none;
+}
+
+.editorDate {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  color: var(--app-text-dim);
+}
+
+.titleInput {
+  border: none;
+  background: transparent;
+  color: var(--app-text);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  outline: none;
+  margin-bottom: $space-sm;
+
+  &::placeholder {
+    color: var(--app-text-dim);
+    opacity: 0.6;
+  }
+}
+
+.bodyInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--app-text);
+  font-size: 15px;
+  line-height: 1.6;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  min-height: 300px;
+
+  &::placeholder {
+    color: var(--app-text-dim);
+    opacity: 0.6;
+  }
+}
+
+.editorEmpty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $space-sm;
+  color: var(--app-text-dim);
+  font-size: 15px;
+}
+
+// -------------------- Мобильная вёрстка --------------------
+@media (max-width: $breakpoint-mobile) {
+  .notes {
+    grid-template-columns: 1fr;
+  }
+
+  // по умолчанию виден список, редактор скрыт
+  .editor {
+    display: none;
+  }
+
+  // когда выбрана заметка — показываем редактор, прячем список
+  .notes[data-detail] .list {
+    display: none;
+  }
+
+  .notes[data-detail] .editor {
+    display: flex;
+  }
+
+  .backBtn {
+    display: inline-flex;
+  }
 }
