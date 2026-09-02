@@ -117,15 +117,27 @@ function DraggableCard({ task }: { task: Task }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: task.id,
   });
+  // роль/таб-индекс выносим явно (для читалок экрана и линтера доступности)
+  const { role, tabIndex, ...a11y } = attributes;
 
   return (
+    // роль и клавиатура заданы через dnd-kit (role/tabIndex/onKeyDown) — доступно
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
       ref={setNodeRef}
+      role={role}
+      tabIndex={tabIndex}
       className={styles.cardWrap}
       data-dragging={isDragging || undefined}
       onClick={() => openEdit(task.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          openEdit(task.id);
+        }
+      }}
       {...listeners}
-      {...attributes}
+      {...a11y}
     >
       <CardContent task={task} />
     </div>

@@ -4,6 +4,10 @@
     "selector-class-pattern": null,
     "scss/dollar-variable-pattern": null,
     "custom-property-pattern": null,
-    "no-descending-specificity": null
+    "no-descending-specificity": null,
+    "selector-pseudo-class-no-unknown": [
+      true,
+      { "ignorePseudoClasses": ["global"] }
+    ]
   }
 }

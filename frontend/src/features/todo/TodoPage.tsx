@@ -56,19 +56,18 @@ export function TodoPage() {
               key={task.id}
               className={styles.row}
               style={{ borderLeftColor: catColor(task.categoryId) }}
-              onClick={() => openEdit(task.id)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && openEdit(task.id)}
             >
               <Checkbox
                 size="sm"
                 checked={task.status === 'done'}
                 onChange={() => toggleDone(task.id)}
-                onClick={(e) => e.stopPropagation()}
                 aria-label="Готово"
               />
-              <div className={styles.main}>
+              <button
+                type="button"
+                className={styles.main}
+                onClick={() => openEdit(task.id)}
+              >
                 <span
                   className={styles.title}
                   data-done={task.status === 'done' || undefined}
@@ -76,7 +75,7 @@ export function TodoPage() {
                   {task.title}
                 </span>
                 <CategoryBadge categoryId={task.categoryId} />
-              </div>
+              </button>
 
               {task.dueDate && (
                 <span className={styles.due}>

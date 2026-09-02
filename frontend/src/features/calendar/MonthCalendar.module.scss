@@ -54,9 +54,18 @@
   cursor: pointer;
   transition: background 0.1s ease;
   display: block;
+  width: 100%;
+  height: 100%;
+  font: inherit;
+  color: inherit;
 
   &:last-child {
     border-right: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--app-accent);
+    outline-offset: -2px;
   }
 
   &:hover {
@@ -152,8 +161,10 @@
   flex-shrink: 0;
   width: 14px;
   height: 14px;
+  padding: 0;
   border-radius: 50%;
   border: 1.5px solid rgb(255 255 255 / 75%);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -122,20 +122,19 @@ function DayCell({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: iso });
   return (
-    <div
+    <button
       ref={setNodeRef}
+      type="button"
       className={styles.dayCell}
       data-outside={outside || undefined}
       data-over={isOver || undefined}
       onClick={() => onQuickAdd(iso)}
-      role="button"
-      tabIndex={-1}
-      title="Добавить задачу"
+      aria-label="Добавить задачу"
     >
       <span className={styles.dayNumber} data-today={isToday || undefined}>
         {dayNum}
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -153,12 +152,17 @@ function TaskBar({
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: seg.task.id,
   });
+  const { role, tabIndex, ...a11y } = attributes;
   const span = seg.colEnd - seg.colStart + 1;
   const done = seg.task.status === 'done';
 
   return (
+    // роль и клавиатура заданы через dnd-kit (role/tabIndex/onKeyDown) — доступно
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
       ref={setNodeRef}
+      role={role}
+      tabIndex={tabIndex}
       className={styles.bar}
       data-done={done || undefined}
       data-cont-left={seg.continuesLeft || undefined}
@@ -172,15 +176,21 @@ function TaskBar({
         background: color,
       }}
       onClick={() => onOpen(seg.task.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          onOpen(seg.task.id);
+        }
+      }}
       {...listeners}
-      {...attributes}
+      {...a11y}
     >
-      <span
+      <button
+        type="button"
         className={styles.barCheck}
         data-checked={done || undefined}
-        role="checkbox"
-        aria-checked={done}
-        aria-label="Готово"
+        aria-pressed={done}
+        aria-label="Отметить выполненной"
         onClick={(e) => {
           e.stopPropagation();
           toggleDone(seg.task.id);
@@ -188,7 +198,7 @@ function TaskBar({
         onPointerDown={(e) => e.stopPropagation()}
       >
         {done && <IconCheck size={11} stroke={3.5} />}
-      </span>
+      </button>
       <span className={styles.barTitle}>{seg.task.title}</span>
     </div>
   );
