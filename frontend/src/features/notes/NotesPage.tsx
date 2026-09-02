@@ -9,7 +9,14 @@ import {
 import dayjs from 'dayjs';
 import { useNotesStore } from '../../store/notes';
 import { useWorkspaceStore } from '../../store/workspace';
+import { NoteEditor } from './NoteEditor';
 import styles from './NotesPage.module.scss';
+
+const stripHtml = (html: string) =>
+  html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 export function NotesPage() {
   const notes = useNotesStore((s) => s.notes);
@@ -61,8 +68,7 @@ export function NotesPage() {
         ) : (
           <div className={styles.items}>
             {visible.map((note) => {
-              const preview =
-                note.body.split('\n').find((l) => l.trim()) || 'Нет текста';
+              const preview = stripHtml(note.body) || 'Нет текста';
               return (
                 <button
                   key={note.id}
@@ -122,13 +128,10 @@ export function NotesPage() {
                 updateNote(selected.id, { title: e.currentTarget.value })
               }
             />
-            <textarea
-              className={styles.bodyInput}
-              placeholder="Начни писать…"
-              value={selected.body}
-              onChange={(e) =>
-                updateNote(selected.id, { body: e.currentTarget.value })
-              }
+            <NoteEditor
+              key={selected.id}
+              content={selected.body}
+              onChange={(html) => updateNote(selected.id, { body: html })}
             />
           </>
         ) : (

@@ -1,0 +1,63 @@
+@use '../../styles/variables' as *;
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border: none;
+
+  // область ввода
+  :global(.mantine-RichTextEditor-content) {
+    flex: 1;
+    overflow-y: auto;
+    background: transparent;
+  }
+
+  :global(.ProseMirror) {
+    min-height: 300px;
+    font-size: 15px;
+    line-height: 1.6;
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  // таблицы
+  :global(.ProseMirror table) {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+    overflow: hidden;
+  }
+
+  :global(.ProseMirror th),
+  :global(.ProseMirror td) {
+    border: 1px solid var(--app-border);
+    padding: 6px 10px;
+    text-align: left;
+    min-width: 60px;
+  }
+
+  :global(.ProseMirror th) {
+    background: var(--app-surface-2);
+    font-weight: 600;
+  }
+
+  // чек-листы
+  :global(.ProseMirror ul[data-type='taskList']) {
+    list-style: none;
+    padding-left: 4px;
+  }
+
+  :global(.ProseMirror ul[data-type='taskList'] li) {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  :global(.ProseMirror ul[data-type='taskList'] li > label) {
+    margin-top: 3px;
+  }
+}

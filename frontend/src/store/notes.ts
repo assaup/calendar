@@ -30,14 +30,14 @@ const seed: Note[] = [
     id: uid(),
     workspaceId: 'personal',
     title: 'Список покупок',
-    body: 'Молоко\nХлеб\nКофе\nОвсянка',
+    body: '<ul><li>Молоко</li><li>Хлеб</li><li>Кофе</li><li>Овсянка</li></ul>',
     updatedAt: Date.now(),
   },
   {
     id: uid(),
     workspaceId: 'work',
     title: 'Идеи для роликов',
-    body: 'Разбор трендов\nКороткие форматы\nИнтро на 3 секунды',
+    body: '<p>Разбор трендов</p><p>Короткие форматы</p><p>Интро на 3 секунды</p>',
     updatedAt: Date.now(),
   },
 ];
