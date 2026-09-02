@@ -3,7 +3,6 @@ import {
   Modal,
   TextInput,
   Textarea,
-  Select,
   SegmentedControl,
   Button,
   Group,
@@ -13,6 +12,7 @@ import {
 import { DatePickerInput } from '@mantine/dates';
 import { IconTrash } from '@tabler/icons-react';
 import { useTaskEditor } from './taskEditor';
+import { CategorySelect } from './CategorySelect';
 import { useTasksStore, type TaskStatus } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 
@@ -37,8 +37,7 @@ const blank: FormState = {
 export function TaskModal() {
   const { opened, editingId, presetDate, presetStatus, close } =
     useTaskEditor();
-  const { tasks, categories, addTask, updateTask, deleteTask } =
-    useTasksStore();
+  const { tasks, addTask, updateTask, deleteTask } = useTasksStore();
   const activeWorkspace = useWorkspaceStore((s) => s.activeId);
 
   const [form, setForm] = useState<FormState>(blank);
@@ -88,8 +87,6 @@ export function TaskModal() {
     close();
   };
 
-  const categoryData = categories.map((c) => ({ value: c.id, label: c.name }));
-
   return (
     <Modal
       opened={opened}
@@ -118,30 +115,9 @@ export function TaskModal() {
           maxRows={6}
         />
 
-        <Select
-          label="Категория"
-          placeholder="Без категории"
-          data={categoryData}
+        <CategorySelect
           value={form.categoryId}
           onChange={(v) => set('categoryId', v)}
-          clearable
-          renderOption={({ option }) => {
-            const cat = categories.find((c) => c.id === option.value);
-            return (
-              <Group gap={8}>
-                <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 3,
-                    background: cat?.color,
-                    display: 'inline-block',
-                  }}
-                />
-                <span>{option.label}</span>
-              </Group>
-            );
-          }}
         />
 
         <div>
