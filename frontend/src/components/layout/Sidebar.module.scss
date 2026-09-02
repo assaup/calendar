@@ -1,0 +1,60 @@
+@use '../../styles/variables' as *;
+
+.sidebar {
+  padding: $space-md $space-sm;
+  display: flex;
+  flex-direction: column;
+  gap: $space-lg;
+  height: 100%;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: $space-sm $space-sm;
+}
+
+.logoDot {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--app-accent), #7f9cd6);
+}
+
+.brandName {
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.2px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: 10px $space-sm;
+  border-radius: $radius-md;
+  color: var(--app-text-dim);
+  font-weight: 500;
+  font-size: 15px;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+
+  &:hover {
+    background: var(--app-surface-2);
+    color: var(--app-text);
+  }
+}
+
+.linkActive {
+  background: var(--app-surface-2);
+  color: var(--app-accent);
+  font-weight: 600;
+}

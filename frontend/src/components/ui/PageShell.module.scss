@@ -1,0 +1,26 @@
+@use '../../styles/variables' as *;
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-md;
+  margin-bottom: $space-lg;
+}
+
+.title {
+  letter-spacing: -0.3px;
+}
+
+.action {
+  flex-shrink: 0;
+}
+
+.body {
+  min-height: 200px;
+}

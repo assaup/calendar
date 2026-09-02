@@ -1,0 +1,47 @@
+@use '../../styles/variables' as *;
+
+.board {
+  display: flex;
+  gap: $space-md;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: $space-sm;
+}
+
+.column {
+  flex: 0 0 280px;
+  background: var(--app-surface-2);
+  border-radius: $radius-lg;
+  padding: $space-sm;
+}
+
+.columnHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $space-sm;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.count {
+  color: var(--app-text-dim);
+  font-weight: 500;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: $space-sm;
+}
+
+.card {
+  padding: $space-sm $space-md;
+  cursor: grab;
+  background: var(--app-surface);
+}
+
+.cardTitle {
+  font-size: 14px;
+  font-weight: 500;
+}

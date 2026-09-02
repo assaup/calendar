@@ -1,0 +1,56 @@
+@use './variables' as *;
+
+// ------------------------------------------------------------------
+// Цветовые токены под светлую и тёмную тему.
+// Mantine ставит на <html> атрибут data-mantine-color-scheme="light|dark".
+// Мы объявляем свои CSS-переменные, чтобы кастомные компоненты тоже
+// автоматически переключались. Правь цвета здесь.
+// ------------------------------------------------------------------
+
+:root,
+[data-mantine-color-scheme='light'] {
+  --app-bg: #f6f7f9;
+  --app-surface: #fff;
+  --app-surface-2: #f0f2f5;
+  --app-border: #e4e7ec;
+  --app-text: #1a1c1e;
+  --app-text-dim: #667085;
+  --app-accent: #44639f;
+  --app-shadow: #{$shadow-md};
+}
+
+[data-mantine-color-scheme='dark'] {
+  --app-bg: #17181c;
+  --app-surface: #1f2126;
+  --app-surface-2: #282b32;
+  --app-border: #33363d;
+  --app-text: #e9eaec;
+  --app-text-dim: #9aa0aa;
+  --app-accent: #7f9cd6;
+  --app-shadow: 0 4px 14px rgb(0 0 0 / 40%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

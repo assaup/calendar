@@ -1,0 +1,53 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit",
+    "lint": "oxlint",
+    "lint:styles": "stylelint \"src/**/*.scss\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,scss}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,scss}\""
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@hookform/resolvers": "^5.9.1",
+    "@mantine/core": "^9.6.0",
+    "@mantine/dates": "^9.6.0",
+    "@mantine/hooks": "^9.6.0",
+    "@mantine/modals": "^9.6.0",
+    "@mantine/notifications": "^9.6.0",
+    "@tabler/icons-react": "^3.46.0",
+    "@tanstack/react-query": "^5.102.8",
+    "axios": "^1.20.0",
+    "dayjs": "^1.11.23",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-hook-form": "^7.87.0",
+    "react-router-dom": "^7.18.3",
+    "zod": "^4.5.4",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "oxlint": "^1.79.0",
+    "prettier": "^3.9.6",
+    "sass": "^1.103.1",
+    "stylelint": "^17.14.1",
+    "stylelint-config-recommended": "^18.0.0",
+    "stylelint-config-standard-scss": "^17.0.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2"
+  }
+}

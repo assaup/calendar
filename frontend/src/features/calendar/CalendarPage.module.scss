@@ -1,0 +1,30 @@
+@use '../../styles/variables' as *;
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: $space-lg;
+}
+
+.calendarCard {
+  display: flex;
+  justify-content: center;
+  padding: $space-lg;
+}
+
+.side {
+  padding: $space-md;
+  height: fit-content;
+}
+
+.empty {
+  color: var(--app-text-dim);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

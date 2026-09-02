@@ -1,0 +1,32 @@
+@use '../../styles/variables' as *;
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: $space-md;
+  padding: 14px $space-md;
+  border-bottom: 1px solid var(--app-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.title {
+  flex: 1;
+  font-size: 15px;
+}
+
+.titleDone {
+  flex: 1;
+  font-size: 15px;
+  color: var(--app-text-dim);
+  text-decoration: line-through;
+}
+
+.due {
+  color: var(--app-text-dim);
+  font-size: 13px;
+  min-width: 60px;
+  text-align: right;
+}
