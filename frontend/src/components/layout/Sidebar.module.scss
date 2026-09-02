@@ -58,3 +58,22 @@
   color: var(--app-accent);
   font-weight: 600;
 }
+
+.user {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: $space-sm;
+  border-radius: $radius-md;
+  transition: background 0.12s ease;
+
+  &:hover {
+    background: var(--app-surface-2);
+  }
+}
+
+.userInfo {
+  min-width: 0;
+  flex: 1;
+}

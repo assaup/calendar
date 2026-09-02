@@ -1,10 +1,13 @@
 import { NavLink as RouterNavLink } from 'react-router-dom';
+import { Menu, UnstyledButton, Avatar, Text } from '@mantine/core';
 import {
   IconCalendar,
   IconLayoutKanban,
   IconChecklist,
   IconNote,
+  IconLogout,
 } from '@tabler/icons-react';
+import { useAuth } from '../../features/auth/useAuth';
 import styles from './Sidebar.module.scss';
 
 const links = [
@@ -15,6 +18,12 @@ const links = [
 ];
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+  const user = useAuth((s) => s.user);
+  const logout = useAuth((s) => s.logout);
+
+  const displayName = user?.name || user?.email || '';
+  const initial = displayName.charAt(0).toUpperCase();
+
   return (
     <div className={styles.sidebar}>
       <div className={styles.brand}>
@@ -37,6 +46,33 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </RouterNavLink>
         ))}
       </nav>
+
+      <Menu shadow="md" width={200} position="top-start">
+        <Menu.Target>
+          <UnstyledButton className={styles.user}>
+            <Avatar color="brand" radius="xl" size={32}>
+              {initial}
+            </Avatar>
+            <div className={styles.userInfo}>
+              <Text size="sm" fw={600} truncate>
+                {user?.name || 'Аккаунт'}
+              </Text>
+              <Text size="xs" c="dimmed" truncate>
+                {user?.email}
+              </Text>
+            </div>
+          </UnstyledButton>
+        </Menu.Target>
+        <Menu.Dropdown>
+          <Menu.Item
+            color="red"
+            leftSection={<IconLogout size={16} />}
+            onClick={() => logout()}
+          >
+            Выйти
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
     </div>
   );
 }

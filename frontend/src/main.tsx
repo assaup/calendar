@@ -23,6 +23,7 @@ import './styles/global.scss';
 import { theme } from './theme';
 import { queryClient } from './lib/queryClient';
 import { router } from './router';
+import { AuthGate } from './features/auth/AuthGate';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -31,7 +32,9 @@ createRoot(document.getElementById('root')!).render(
         <DatesProvider settings={{ locale: 'ru', firstDayOfWeek: 1 }}>
           <ModalsProvider>
             <Notifications position="top-right" />
-            <RouterProvider router={router} />
+            <AuthGate>
+              <RouterProvider router={router} />
+            </AuthGate>
           </ModalsProvider>
         </DatesProvider>
       </QueryClientProvider>

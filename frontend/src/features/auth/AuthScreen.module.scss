@@ -1,0 +1,101 @@
+@use '../../styles/variables' as *;
+
+.screen {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  grid-template-rows: minmax(100vh, auto);
+  background: var(--app-bg);
+}
+
+// --- Левая брендовая панель ---
+.brand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-xl;
+  background: linear-gradient(150deg, #44639f 0%, #5f7cb7 45%, #9c6fd6 100%);
+  color: #fff;
+  overflow: hidden;
+}
+
+.brandInner {
+  max-width: 440px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: $space-xl;
+}
+
+.tagline {
+  font-size: 34px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 0 0 $space-md;
+}
+
+.subtitle {
+  font-size: 16px;
+  line-height: 1.55;
+  opacity: 0.9;
+  margin: 0;
+}
+
+// --- Правая часть с формой ---
+.formSide {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $space-xl;
+}
+
+.form {
+  width: 100%;
+  max-width: 380px;
+}
+
+.formTitle {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.formHint {
+  color: var(--app-text-dim);
+  font-size: 14px;
+  margin: 6px 0 $space-md;
+}
+
+.error {
+  margin-top: $space-md;
+  padding: 10px 12px;
+  border-radius: $radius-sm;
+  background: color-mix(in srgb, #e03131 12%, transparent);
+  color: #e03131;
+  font-size: 13.5px;
+}
+
+.switch {
+  margin-top: $space-lg;
+  text-align: center;
+  font-size: 14px;
+  color: var(--app-text-dim);
+}
+
+// --- Мобильная вёрстка: прячем брендовую панель ---
+@media (max-width: $breakpoint-mobile) {
+  .screen {
+    grid-template-columns: 1fr;
+  }
+
+  .brand {
+    display: none;
+  }
+}
