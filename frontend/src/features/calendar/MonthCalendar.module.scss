@@ -106,22 +106,22 @@
   pointer-events: auto;
   display: flex;
   align-items: center;
+  gap: 6px;
   border: none;
   border-radius: $radius-sm;
-  background: var(--app-surface-2);
-  color: var(--app-text);
+  color: #fff;
   padding: 0 8px;
   font-size: 12.5px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: grab;
   overflow: hidden;
-  box-shadow: var(--app-shadow);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 18%);
   transition:
     transform 0.08s ease,
     filter 0.1s ease;
 
   &:hover {
-    filter: brightness(1.05);
+    filter: brightness(1.06);
     transform: translateY(-1px);
   }
 
@@ -148,7 +148,31 @@
   }
 }
 
+.barCheck {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgb(255 255 255 / 75%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.1s ease;
+
+  &:hover {
+    background: rgb(255 255 255 / 20%);
+  }
+
+  &[data-checked] {
+    background: rgb(255 255 255 / 90%);
+    color: var(--app-text);
+  }
+}
+
 .barTitle {
+  flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

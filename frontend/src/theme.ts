@@ -1,17 +1,17 @@
 import { createTheme, type MantineColorsTuple } from '@mantine/core';
 
-// Основной акцентный цвет приложения. Поменяешь тут — поменяется везде.
+// Основной акцентный цвет приложения (индиго). Поменяешь тут — поменяется везде.
 const brand: MantineColorsTuple = [
-  '#eef3ff',
-  '#dce4f5',
-  '#b9c7e2',
-  '#94a8d0',
-  '#748dc0',
-  '#5f7cb7',
-  '#5474b4',
-  '#44639f',
-  '#3a5890',
-  '#2c4b80',
+  '#edf2ff',
+  '#dbe4ff',
+  '#bac8ff',
+  '#91a7ff',
+  '#748ffc',
+  '#5c7cfa',
+  '#4c6ef5',
+  '#4263eb',
+  '#3b5bdb',
+  '#364fc7',
 ];
 
 export const theme = createTheme({

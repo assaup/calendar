@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { TextInput, PasswordInput, Button, Anchor } from '@mantine/core';
-import { IconCalendarStats } from '@tabler/icons-react';
 import { AxiosError } from 'axios';
 import { useAuth } from './useAuth';
+import { LogoMark } from '../../components/ui/LogoMark';
 import styles from './AuthScreen.module.scss';
 
 type Mode = 'login' | 'register';
@@ -50,7 +50,7 @@ export function AuthScreen() {
       <div className={styles.brand}>
         <div className={styles.brandInner}>
           <div className={styles.logo}>
-            <IconCalendarStats size={28} />
+            <LogoMark size={30} />
             <span>Планер</span>
           </div>
           <h1 className={styles.tagline}>

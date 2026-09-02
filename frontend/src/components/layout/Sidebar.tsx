@@ -8,6 +8,7 @@ import {
   IconLogout,
 } from '@tabler/icons-react';
 import { useAuth } from '../../features/auth/useAuth';
+import { LogoMark } from '../ui/LogoMark';
 import styles from './Sidebar.module.scss';
 
 const links = [
@@ -27,7 +28,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className={styles.sidebar}>
       <div className={styles.brand}>
-        <span className={styles.logoDot} />
+        <LogoMark size={26} />
         <span className={styles.brandName}>Планер</span>
       </div>
 

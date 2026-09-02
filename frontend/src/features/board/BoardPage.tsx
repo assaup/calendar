@@ -35,10 +35,24 @@ const COLUMNS: { status: TaskStatus; title: string }[] = [
 function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
   const toggleDone = useTasksStore((s) => s.toggleDone);
   const deleteTask = useTasksStore((s) => s.deleteTask);
+  const category = useTasksStore((s) =>
+    s.categories.find((c) => c.id === task.categoryId),
+  );
   const openEdit = useTaskEditor((s) => s.openEdit);
 
+  const tint = category
+    ? {
+        background: `color-mix(in srgb, ${category.color} 15%, var(--app-surface))`,
+        borderColor: `color-mix(in srgb, ${category.color} 45%, var(--app-border))`,
+      }
+    : undefined;
+
   return (
-    <div className={styles.card} data-dragging={dragging || undefined}>
+    <div
+      className={styles.card}
+      data-dragging={dragging || undefined}
+      style={tint}
+    >
       <div className={styles.cardTop}>
         <Checkbox
           size="sm"

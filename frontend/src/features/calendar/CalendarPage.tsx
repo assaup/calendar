@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import dayjs from 'dayjs';
-import { ActionIcon, Button, Group, Title } from '@mantine/core';
+import { ActionIcon, Button, Title } from '@mantine/core';
 import {
   IconChevronLeft,
   IconChevronRight,
@@ -20,36 +20,38 @@ export function CalendarPage() {
   return (
     <div className={styles.page}>
       <div className={styles.toolbar}>
-        <Group gap="sm">
+        <div className={styles.left}>
           <Title order={2} className={styles.month}>
             {capitalized}
           </Title>
-          <Group gap={4}>
+          <div className={styles.nav}>
             <ActionIcon
-              variant="default"
-              size="lg"
+              variant="subtle"
+              color="gray"
+              size="md"
               aria-label="Предыдущий месяц"
               onClick={() => setMonth((m) => m.subtract(1, 'month'))}
             >
               <IconChevronLeft size={18} />
             </ActionIcon>
+            <button
+              type="button"
+              className={styles.todayBtn}
+              onClick={() => setMonth(dayjs().startOf('month'))}
+            >
+              Сегодня
+            </button>
             <ActionIcon
-              variant="default"
-              size="lg"
+              variant="subtle"
+              color="gray"
+              size="md"
               aria-label="Следующий месяц"
               onClick={() => setMonth((m) => m.add(1, 'month'))}
             >
               <IconChevronRight size={18} />
             </ActionIcon>
-          </Group>
-          <Button
-            variant="subtle"
-            size="sm"
-            onClick={() => setMonth(dayjs().startOf('month'))}
-          >
-            Сегодня
-          </Button>
-        </Group>
+          </div>
+        </div>
 
         <Button
           leftSection={<IconPlus size={16} />}

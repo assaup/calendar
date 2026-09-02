@@ -14,9 +14,42 @@
   flex-wrap: wrap;
 }
 
+.left {
+  display: flex;
+  align-items: center;
+  gap: $space-md;
+  flex-wrap: wrap;
+}
+
 .month {
   letter-spacing: -0.3px;
-  min-width: 190px;
+  min-width: 170px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--app-border);
+  border-radius: 999px;
+  background: var(--app-surface);
+}
+
+.todayBtn {
+  border: none;
+  background: transparent;
+  color: var(--app-text);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+
+  &:hover {
+    background: var(--app-surface-2);
+  }
 }
 
 @media (max-width: $breakpoint-mobile) {

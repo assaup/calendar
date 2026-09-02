@@ -10,9 +10,10 @@
 .row {
   display: flex;
   align-items: center;
-  gap: $space-md;
+  gap: $space-sm;
   padding: 12px $space-md;
   border-bottom: 1px solid var(--app-border);
+  border-left: 3px solid transparent;
   cursor: pointer;
   transition: background 0.1s ease;
 
@@ -25,9 +26,19 @@
   }
 }
 
-.title {
+.main {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title {
   font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   &[data-done] {
     color: var(--app-text-dim);

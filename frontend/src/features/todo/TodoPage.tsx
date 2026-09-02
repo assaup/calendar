@@ -16,11 +16,15 @@ import styles from './TodoPage.module.scss';
 
 export function TodoPage() {
   const tasks = useTasksStore((s) => s.tasks);
+  const categories = useTasksStore((s) => s.categories);
   const toggleDone = useTasksStore((s) => s.toggleDone);
   const deleteTask = useTasksStore((s) => s.deleteTask);
   const activeWorkspace = useWorkspaceStore((s) => s.activeId);
   const openNew = useTaskEditor((s) => s.openNew);
   const openEdit = useTaskEditor((s) => s.openEdit);
+
+  const catColor = (id: string | null) =>
+    categories.find((c) => c.id === id)?.color ?? 'transparent';
 
   const visible = tasks
     .filter((t) => t.workspaceId === activeWorkspace)
@@ -51,6 +55,7 @@ export function TodoPage() {
             <div
               key={task.id}
               className={styles.row}
+              style={{ borderLeftColor: catColor(task.categoryId) }}
               onClick={() => openEdit(task.id)}
               role="button"
               tabIndex={0}
@@ -63,14 +68,15 @@ export function TodoPage() {
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Готово"
               />
-              <span
-                className={styles.title}
-                data-done={task.status === 'done' || undefined}
-              >
-                {task.title}
-              </span>
-
-              <CategoryBadge categoryId={task.categoryId} />
+              <div className={styles.main}>
+                <span
+                  className={styles.title}
+                  data-done={task.status === 'done' || undefined}
+                >
+                  {task.title}
+                </span>
+                <CategoryBadge categoryId={task.categoryId} />
+              </div>
 
               {task.dueDate && (
                 <span className={styles.due}>

@@ -12,6 +12,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
+import { IconCheck } from '@tabler/icons-react';
 import { useTasksStore, type Task } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
@@ -148,17 +149,18 @@ function TaskBar({
   color: string;
   onOpen: (id: string) => void;
 }) {
+  const toggleDone = useTasksStore((s) => s.toggleDone);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: seg.task.id,
   });
   const span = seg.colEnd - seg.colStart + 1;
+  const done = seg.task.status === 'done';
 
   return (
-    <button
+    <div
       ref={setNodeRef}
-      type="button"
       className={styles.bar}
-      data-done={seg.task.status === 'done' || undefined}
+      data-done={done || undefined}
       data-cont-left={seg.continuesLeft || undefined}
       data-cont-right={seg.continuesRight || undefined}
       data-dragging={isDragging || undefined}
@@ -167,14 +169,28 @@ function TaskBar({
         left: `calc(${(seg.colStart / 7) * 100}% + 4px)`,
         width: `calc(${(span / 7) * 100}% - 8px)`,
         height: BAR_H,
-        borderLeft: `3px solid ${color}`,
+        background: color,
       }}
       onClick={() => onOpen(seg.task.id)}
       {...listeners}
       {...attributes}
     >
+      <span
+        className={styles.barCheck}
+        data-checked={done || undefined}
+        role="checkbox"
+        aria-checked={done}
+        aria-label="Готово"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleDone(seg.task.id);
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
+        {done && <IconCheck size={11} stroke={3.5} />}
+      </span>
       <span className={styles.barTitle}>{seg.task.title}</span>
-    </button>
+    </div>
   );
 }
 
@@ -264,11 +280,16 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
 
         <div className={styles.grid}>
           {weeks.map((week, wi) => {
-            const rowHeight =
-              DATE_ROW_H + week.lanes * (BAR_H + BAR_GAP) + BAR_GAP;
             const quickCol = week.days.findIndex(
               (d) => d.format('YYYY-MM-DD') === quickDate,
             );
+            // если открыт быстрый ввод — добавляем место под инпут, чтобы он
+            // не вылезал за пределы клетки дня
+            const rowHeight =
+              DATE_ROW_H +
+              week.lanes * (BAR_H + BAR_GAP) +
+              BAR_GAP +
+              (quickCol !== -1 ? BAR_H + BAR_GAP : 0);
 
             return (
               <div
