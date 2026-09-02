@@ -1,3 +1,15 @@
+import { useState } from 'react';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDraggable,
+  useDroppable,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
 import { Checkbox, ActionIcon, Menu } from '@mantine/core';
 import {
   IconPlus,
@@ -20,25 +32,20 @@ const COLUMNS: { status: TaskStatus; title: string }[] = [
   { status: 'done', title: 'Готово' },
 ];
 
-function TaskCard({ task }: { task: Task }) {
+function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
   const toggleDone = useTasksStore((s) => s.toggleDone);
   const deleteTask = useTasksStore((s) => s.deleteTask);
   const openEdit = useTaskEditor((s) => s.openEdit);
 
   return (
-    <div
-      className={styles.card}
-      onClick={() => openEdit(task.id)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && openEdit(task.id)}
-    >
+    <div className={styles.card} data-dragging={dragging || undefined}>
       <div className={styles.cardTop}>
         <Checkbox
           size="sm"
           checked={task.status === 'done'}
           onChange={() => toggleDone(task.id)}
           onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
           aria-label="Готово"
         />
         <span
@@ -54,6 +61,7 @@ function TaskCard({ task }: { task: Task }) {
               color="gray"
               size="sm"
               onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
               aria-label="Меню задачи"
             >
               <IconDots size={16} />
@@ -90,46 +98,118 @@ function TaskCard({ task }: { task: Task }) {
   );
 }
 
+function DraggableCard({ task }: { task: Task }) {
+  const openEdit = useTaskEditor((s) => s.openEdit);
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: task.id,
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={styles.cardWrap}
+      data-dragging={isDragging || undefined}
+      onClick={() => openEdit(task.id)}
+      {...listeners}
+      {...attributes}
+    >
+      <CardContent task={task} />
+    </div>
+  );
+}
+
+function Column({
+  status,
+  title,
+  tasks,
+}: {
+  status: TaskStatus;
+  title: string;
+  tasks: Task[];
+}) {
+  const openNew = useTaskEditor((s) => s.openNew);
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={styles.column}
+      data-over={isOver || undefined}
+    >
+      <div className={styles.columnHead}>
+        <span>{title}</span>
+        <span className={styles.count}>{tasks.length}</span>
+      </div>
+
+      <div className={styles.cards}>
+        {tasks.map((task) => (
+          <DraggableCard key={task.id} task={task} />
+        ))}
+      </div>
+
+      <button
+        type="button"
+        className={styles.addBtn}
+        onClick={() => openNew({ status })}
+      >
+        <IconPlus size={16} />
+        Добавить задачу
+      </button>
+    </div>
+  );
+}
+
 export function BoardPage() {
   const tasks = useTasksStore((s) => s.tasks);
+  const updateTask = useTasksStore((s) => s.updateTask);
   const activeWorkspace = useWorkspaceStore((s) => s.activeId);
-  const openNew = useTaskEditor((s) => s.openNew);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
 
   const visible = tasks.filter((t) => t.workspaceId === activeWorkspace);
+
+  const onDragStart = (e: DragStartEvent) => {
+    setActiveTask(visible.find((t) => t.id === e.active.id) ?? null);
+  };
+
+  const onDragEnd = (e: DragEndEvent) => {
+    setActiveTask(null);
+    const overId = e.over?.id as TaskStatus | undefined;
+    if (!overId) return;
+    const task = visible.find((t) => t.id === e.active.id);
+    if (task && task.status !== overId) {
+      updateTask(task.id, { status: overId });
+    }
+  };
 
   return (
     <PageShell
       title="Доска"
-      description="Задачи по статусам. Отметь галочкой, нажми для деталей, добавь новую."
+      description="Перетаскивай карточки между колонками. Клик — детали, галочка — готово."
     >
-      <div className={styles.board}>
-        {COLUMNS.map((col) => {
-          const items = visible.filter((t) => t.status === col.status);
-          return (
-            <div key={col.status} className={styles.column}>
-              <div className={styles.columnHead}>
-                <span>{col.title}</span>
-                <span className={styles.count}>{items.length}</span>
-              </div>
+      <DndContext
+        sensors={sensors}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+      >
+        <div className={styles.board}>
+          {COLUMNS.map((col) => (
+            <Column
+              key={col.status}
+              status={col.status}
+              title={col.title}
+              tasks={visible.filter((t) => t.status === col.status)}
+            />
+          ))}
+        </div>
 
-              <div className={styles.cards}>
-                {items.map((task) => (
-                  <TaskCard key={task.id} task={task} />
-                ))}
-              </div>
-
-              <button
-                type="button"
-                className={styles.addBtn}
-                onClick={() => openNew({ status: col.status })}
-              >
-                <IconPlus size={16} />
-                Добавить задачу
-              </button>
-            </div>
-          );
-        })}
-      </div>
+        <DragOverlay>
+          {activeTask ? <CardContent task={activeTask} dragging /> : null}
+        </DragOverlay>
+      </DndContext>
     </PageShell>
   );
 }

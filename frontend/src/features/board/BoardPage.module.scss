@@ -16,6 +16,15 @@
   display: flex;
   flex-direction: column;
   gap: $space-sm;
+  transition:
+    background 0.12s ease,
+    outline-color 0.12s ease;
+  outline: 2px solid transparent;
+
+  &[data-over] {
+    outline-color: var(--app-accent);
+    background: color-mix(in srgb, var(--app-accent) 10%, var(--app-surface-2));
+  }
 }
 
 .columnHead {
@@ -38,12 +47,23 @@
   gap: $space-sm;
 }
 
+.cardWrap {
+  cursor: grab;
+
+  &[data-dragging] {
+    opacity: 0.4;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
 .card {
   background: var(--app-surface);
   border: 1px solid var(--app-border);
   border-radius: $radius-md;
   padding: 10px $space-md;
-  cursor: pointer;
   transition:
     box-shadow 0.12s ease,
     transform 0.08s ease;
@@ -51,6 +71,12 @@
   &:hover {
     box-shadow: var(--app-shadow);
     transform: translateY(-1px);
+  }
+
+  &[data-dragging] {
+    box-shadow: var(--app-shadow);
+    transform: rotate(2deg);
+    cursor: grabbing;
   }
 }
 

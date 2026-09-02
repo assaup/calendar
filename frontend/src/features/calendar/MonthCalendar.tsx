@@ -1,5 +1,17 @@
 import { useMemo, useState } from 'react';
 import dayjs, { type Dayjs } from 'dayjs';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  pointerWithin,
+  useSensor,
+  useSensors,
+  useDraggable,
+  useDroppable,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
 import { useTasksStore, type Task } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
@@ -13,8 +25,8 @@ const MIN_LANES = 2;
 interface Segment {
   task: Task;
   lane: number;
-  colStart: number; // 0..6
-  colEnd: number; // 0..6
+  colStart: number;
+  colEnd: number;
   continuesLeft: boolean;
   continuesRight: boolean;
 }
@@ -93,16 +105,94 @@ function buildWeeks(month: Dayjs, tasks: Task[]): WeekData[] {
 
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
+// --- Ячейка дня (droppable + быстрый ввод) ---
+function DayCell({
+  iso,
+  dayNum,
+  outside,
+  isToday,
+  onQuickAdd,
+}: {
+  iso: string;
+  dayNum: number;
+  outside: boolean;
+  isToday: boolean;
+  onQuickAdd: (iso: string) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: iso });
+  return (
+    <div
+      ref={setNodeRef}
+      className={styles.dayCell}
+      data-outside={outside || undefined}
+      data-over={isOver || undefined}
+      onClick={() => onQuickAdd(iso)}
+      role="button"
+      tabIndex={-1}
+      title="Добавить задачу"
+    >
+      <span className={styles.dayNumber} data-today={isToday || undefined}>
+        {dayNum}
+      </span>
+    </div>
+  );
+}
+
+// --- Полоса задачи (draggable) ---
+function TaskBar({
+  seg,
+  color,
+  onOpen,
+}: {
+  seg: Segment;
+  color: string;
+  onOpen: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: seg.task.id,
+  });
+  const span = seg.colEnd - seg.colStart + 1;
+
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      className={styles.bar}
+      data-done={seg.task.status === 'done' || undefined}
+      data-cont-left={seg.continuesLeft || undefined}
+      data-cont-right={seg.continuesRight || undefined}
+      data-dragging={isDragging || undefined}
+      style={{
+        top: DATE_ROW_H + seg.lane * (BAR_H + BAR_GAP),
+        left: `calc(${(seg.colStart / 7) * 100}% + 4px)`,
+        width: `calc(${(span / 7) * 100}% - 8px)`,
+        height: BAR_H,
+        borderLeft: `3px solid ${color}`,
+      }}
+      onClick={() => onOpen(seg.task.id)}
+      {...listeners}
+      {...attributes}
+    >
+      <span className={styles.barTitle}>{seg.task.title}</span>
+    </button>
+  );
+}
+
 export function MonthCalendar({ month }: { month: Dayjs }) {
   const tasks = useTasksStore((s) => s.tasks);
   const categories = useTasksStore((s) => s.categories);
   const addTask = useTasksStore((s) => s.addTask);
+  const updateTask = useTasksStore((s) => s.updateTask);
   const activeWorkspace = useWorkspaceStore((s) => s.activeId);
   const openEdit = useTaskEditor((s) => s.openEdit);
 
-  // Быстрое добавление: в каком дне открыт инпут и его текст
   const [quickDate, setQuickDate] = useState<string | null>(null);
   const [quickText, setQuickText] = useState('');
+  const [dragTask, setDragTask] = useState<Task | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
 
   const visibleTasks = useMemo(
     () => tasks.filter((t) => t.workspaceId === activeWorkspace),
@@ -138,113 +228,115 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
     setQuickText('');
   };
 
+  const onDragStart = (e: DragStartEvent) => {
+    setDragTask(visibleTasks.find((t) => t.id === e.active.id) ?? null);
+  };
+
+  const onDragEnd = (e: DragEndEvent) => {
+    setDragTask(null);
+    const overIso = e.over?.id as string | undefined;
+    if (!overIso) return;
+    const task = visibleTasks.find((t) => t.id === e.active.id);
+    const range = task ? taskRange(task) : null;
+    if (!task || !range) return;
+    const duration = range.end.diff(range.start, 'day');
+    updateTask(task.id, {
+      startDate: overIso,
+      dueDate: dayjs(overIso).add(duration, 'day').format('YYYY-MM-DD'),
+    });
+  };
+
   return (
-    <div className={styles.calendar}>
-      <div className={styles.weekdays}>
-        {WEEKDAYS.map((d) => (
-          <div key={d} className={styles.weekday}>
-            {d}
-          </div>
-        ))}
-      </div>
-
-      <div className={styles.grid}>
-        {weeks.map((week, wi) => {
-          const rowHeight =
-            DATE_ROW_H + week.lanes * (BAR_H + BAR_GAP) + BAR_GAP;
-          const quickCol = week.days.findIndex(
-            (d) => d.format('YYYY-MM-DD') === quickDate,
-          );
-
-          return (
-            <div
-              key={wi}
-              className={styles.week}
-              style={{ minHeight: rowHeight }}
-            >
-              {/* фон — кликабельные ячейки дней */}
-              <div className={styles.dayRow}>
-                {week.days.map((day) => {
-                  const iso = day.format('YYYY-MM-DD');
-                  const outside = day.month() !== month.month();
-                  const isToday = iso === today;
-                  return (
-                    <div
-                      key={iso}
-                      className={styles.dayCell}
-                      data-outside={outside || undefined}
-                      onClick={() => startQuickAdd(iso)}
-                      role="button"
-                      tabIndex={-1}
-                      title="Добавить задачу"
-                    >
-                      <span
-                        className={styles.dayNumber}
-                        data-today={isToday || undefined}
-                      >
-                        {day.date()}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* полосы задач */}
-              <div className={styles.bars}>
-                {week.segments.map((seg) => {
-                  const span = seg.colEnd - seg.colStart + 1;
-                  const done = seg.task.status === 'done';
-                  return (
-                    <button
-                      key={seg.task.id}
-                      type="button"
-                      className={styles.bar}
-                      data-done={done || undefined}
-                      data-cont-left={seg.continuesLeft || undefined}
-                      data-cont-right={seg.continuesRight || undefined}
-                      style={{
-                        top: DATE_ROW_H + seg.lane * (BAR_H + BAR_GAP),
-                        left: `calc(${(seg.colStart / 7) * 100}% + 4px)`,
-                        width: `calc(${(span / 7) * 100}% - 8px)`,
-                        height: BAR_H,
-                        borderLeft: `3px solid ${catColor(seg.task.categoryId)}`,
-                      }}
-                      onClick={() => openEdit(seg.task.id)}
-                    >
-                      <span className={styles.barTitle}>{seg.task.title}</span>
-                    </button>
-                  );
-                })}
-
-                {/* инпут быстрого добавления */}
-                {quickCol !== -1 && (
-                  <input
-                    className={styles.quickInput}
-                    style={{
-                      top: DATE_ROW_H + week.lanes * (BAR_H + BAR_GAP),
-                      left: `calc(${(quickCol / 7) * 100}% + 4px)`,
-                      width: `calc(${(1 / 7) * 100}% - 8px)`,
-                    }}
-                    // eslint-disable-next-line jsx-a11y/no-autofocus
-                    autoFocus
-                    placeholder="Задача…"
-                    value={quickText}
-                    onChange={(e) => setQuickText(e.currentTarget.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') commitQuickAdd();
-                      if (e.key === 'Escape') {
-                        setQuickDate(null);
-                        setQuickText('');
-                      }
-                    }}
-                    onBlur={commitQuickAdd}
-                  />
-                )}
-              </div>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={pointerWithin}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+    >
+      <div className={styles.calendar}>
+        <div className={styles.weekdays}>
+          {WEEKDAYS.map((d) => (
+            <div key={d} className={styles.weekday}>
+              {d}
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        <div className={styles.grid}>
+          {weeks.map((week, wi) => {
+            const rowHeight =
+              DATE_ROW_H + week.lanes * (BAR_H + BAR_GAP) + BAR_GAP;
+            const quickCol = week.days.findIndex(
+              (d) => d.format('YYYY-MM-DD') === quickDate,
+            );
+
+            return (
+              <div
+                key={wi}
+                className={styles.week}
+                style={{ minHeight: rowHeight }}
+              >
+                <div className={styles.dayRow}>
+                  {week.days.map((day) => {
+                    const iso = day.format('YYYY-MM-DD');
+                    return (
+                      <DayCell
+                        key={iso}
+                        iso={iso}
+                        dayNum={day.date()}
+                        outside={day.month() !== month.month()}
+                        isToday={iso === today}
+                        onQuickAdd={startQuickAdd}
+                      />
+                    );
+                  })}
+                </div>
+
+                <div className={styles.bars}>
+                  {week.segments.map((seg) => (
+                    <TaskBar
+                      key={seg.task.id}
+                      seg={seg}
+                      color={catColor(seg.task.categoryId)}
+                      onOpen={openEdit}
+                    />
+                  ))}
+
+                  {quickCol !== -1 && (
+                    <input
+                      className={styles.quickInput}
+                      style={{
+                        top: DATE_ROW_H + week.lanes * (BAR_H + BAR_GAP),
+                        left: `calc(${(quickCol / 7) * 100}% + 4px)`,
+                        width: `calc(${(1 / 7) * 100}% - 8px)`,
+                      }}
+                      // eslint-disable-next-line jsx-a11y/no-autofocus
+                      autoFocus
+                      placeholder="Задача…"
+                      value={quickText}
+                      onChange={(e) => setQuickText(e.currentTarget.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitQuickAdd();
+                        if (e.key === 'Escape') {
+                          setQuickDate(null);
+                          setQuickText('');
+                        }
+                      }}
+                      onBlur={commitQuickAdd}
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      <DragOverlay dropAnimation={null}>
+        {dragTask ? (
+          <div className={styles.dragGhost}>{dragTask.title}</div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }
