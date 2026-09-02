@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useTasksStore, type Task } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
 import styles from './MonthCalendar.module.scss';
 
-const DATE_ROW_H = 30;
+const DATE_ROW_H = 36;
 const BAR_H = 22;
 const BAR_GAP = 4;
 const MIN_LANES = 2;
@@ -47,7 +47,6 @@ function buildWeeks(month: Dayjs, tasks: Task[]): WeekData[] {
     const weekEnd = weekStart.add(6, 'day');
     const days = Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day'));
 
-    // задачи, попадающие в эту неделю
     const raw = tasks
       .map((task) => {
         const range = taskRange(task);
@@ -70,8 +69,7 @@ function buildWeeks(month: Dayjs, tasks: Task[]): WeekData[] {
       .filter((x): x is Omit<Segment, 'lane'> => x !== null)
       .sort((a, b) => a.colStart - b.colStart || b.colEnd - a.colEnd);
 
-    // раскладка по дорожкам (lanes)
-    const laneEnds: number[] = []; // последний занятый столбец в каждой дорожке
+    const laneEnds: number[] = [];
     const segments: Segment[] = raw.map((seg) => {
       let lane = laneEnds.findIndex((end) => seg.colStart > end);
       if (lane === -1) {
@@ -98,9 +96,13 @@ const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 export function MonthCalendar({ month }: { month: Dayjs }) {
   const tasks = useTasksStore((s) => s.tasks);
   const categories = useTasksStore((s) => s.categories);
+  const addTask = useTasksStore((s) => s.addTask);
   const activeWorkspace = useWorkspaceStore((s) => s.activeId);
-  const openNew = useTaskEditor((s) => s.openNew);
   const openEdit = useTaskEditor((s) => s.openEdit);
+
+  // Быстрое добавление: в каком дне открыт инпут и его текст
+  const [quickDate, setQuickDate] = useState<string | null>(null);
+  const [quickText, setQuickText] = useState('');
 
   const visibleTasks = useMemo(
     () => tasks.filter((t) => t.workspaceId === activeWorkspace),
@@ -117,6 +119,25 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
 
   const today = dayjs().format('YYYY-MM-DD');
 
+  const startQuickAdd = (iso: string) => {
+    setQuickDate(iso);
+    setQuickText('');
+  };
+
+  const commitQuickAdd = () => {
+    const title = quickText.trim();
+    if (title && quickDate) {
+      addTask({
+        workspaceId: activeWorkspace,
+        title,
+        startDate: quickDate,
+        dueDate: quickDate,
+      });
+    }
+    setQuickDate(null);
+    setQuickText('');
+  };
+
   return (
     <div className={styles.calendar}>
       <div className={styles.weekdays}>
@@ -131,6 +152,10 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
         {weeks.map((week, wi) => {
           const rowHeight =
             DATE_ROW_H + week.lanes * (BAR_H + BAR_GAP) + BAR_GAP;
+          const quickCol = week.days.findIndex(
+            (d) => d.format('YYYY-MM-DD') === quickDate,
+          );
+
           return (
             <div
               key={wi}
@@ -144,12 +169,13 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
                   const outside = day.month() !== month.month();
                   const isToday = iso === today;
                   return (
-                    <button
+                    <div
                       key={iso}
-                      type="button"
                       className={styles.dayCell}
                       data-outside={outside || undefined}
-                      onClick={() => openNew({ date: iso })}
+                      onClick={() => startQuickAdd(iso)}
+                      role="button"
+                      tabIndex={-1}
                       title="Добавить задачу"
                     >
                       <span
@@ -158,7 +184,7 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
                       >
                         {day.date()}
                       </span>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
@@ -181,7 +207,6 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
                         left: `calc(${(seg.colStart / 7) * 100}% + 4px)`,
                         width: `calc(${(span / 7) * 100}% - 8px)`,
                         height: BAR_H,
-                        // цвет категории слева + мягкий фон
                         borderLeft: `3px solid ${catColor(seg.task.categoryId)}`,
                       }}
                       onClick={() => openEdit(seg.task.id)}
@@ -190,6 +215,31 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
                     </button>
                   );
                 })}
+
+                {/* инпут быстрого добавления */}
+                {quickCol !== -1 && (
+                  <input
+                    className={styles.quickInput}
+                    style={{
+                      top: DATE_ROW_H + week.lanes * (BAR_H + BAR_GAP),
+                      left: `calc(${(quickCol / 7) * 100}% + 4px)`,
+                      width: `calc(${(1 / 7) * 100}% - 8px)`,
+                    }}
+                    // eslint-disable-next-line jsx-a11y/no-autofocus
+                    autoFocus
+                    placeholder="Задача…"
+                    value={quickText}
+                    onChange={(e) => setQuickText(e.currentTarget.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') commitQuickAdd();
+                      if (e.key === 'Escape') {
+                        setQuickDate(null);
+                        setQuickText('');
+                      }
+                    }}
+                    onBlur={commitQuickAdd}
+                  />
+                )}
               </div>
             </div>
           );

@@ -145,6 +145,21 @@
   text-overflow: ellipsis;
 }
 
+.quickInput {
+  position: absolute;
+  pointer-events: auto;
+  z-index: 10;
+  height: 24px;
+  border: 1px solid var(--app-accent);
+  border-radius: $radius-sm;
+  background: var(--app-surface);
+  color: var(--app-text);
+  padding: 0 8px;
+  font-size: 12.5px;
+  outline: none;
+  box-shadow: var(--app-shadow);
+}
+
 @media (max-width: $breakpoint-mobile) {
   .weekday {
     text-align: center;
