@@ -178,22 +178,22 @@
   height: 16px;
   padding: 0;
   border-radius: 50%;
-  border: 1.5px solid rgb(255 255 255 / 75%);
+  border: 1.6px solid;
+  border-color: color-mix(in srgb, currentcolor 65%, transparent);
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: inherit; // берёт контрастный цвет текста карточки
   cursor: pointer;
   transition: background 0.1s ease;
 
   &:hover {
-    background: rgb(255 255 255 / 20%);
+    background: color-mix(in srgb, currentcolor 18%, transparent);
   }
 
   &[data-checked] {
-    background: rgb(255 255 255 / 90%);
-    color: var(--app-text);
+    background: color-mix(in srgb, currentcolor 22%, transparent);
   }
 }
 

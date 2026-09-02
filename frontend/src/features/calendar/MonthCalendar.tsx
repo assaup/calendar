@@ -16,6 +16,7 @@ import { IconCheck } from '@tabler/icons-react';
 import { useTasksStore, type Task } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
+import { contrastText } from '../../lib/palette';
 import styles from './MonthCalendar.module.scss';
 
 const DATE_ROW_H = 34;
@@ -185,6 +186,7 @@ function TaskBar({
         width: `calc(${(span / 7) * 100}% - 8px)`,
         height: BAR_H,
         background: color,
+        color: contrastText(color),
       }}
       onClick={() => onOpen(seg.task.id)}
       onKeyDown={(e) => {

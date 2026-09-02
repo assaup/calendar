@@ -66,10 +66,10 @@ const uid = () =>
 
 // --- Стартовые данные ------------------------------------------------------
 const seedCategories: Category[] = [
-  { id: 'cat-work', name: 'Работа', color: '#364fc7' },
-  { id: 'cat-home', name: 'Дом', color: '#2b8a3e' },
-  { id: 'cat-meet', name: 'Встречи', color: '#862e9c' },
-  { id: 'cat-life', name: 'Быт', color: '#d9480f' },
+  { id: 'cat-work', name: 'Работа', color: '#478bff' },
+  { id: 'cat-home', name: 'Дом', color: '#5ec974' },
+  { id: 'cat-meet', name: 'Встречи', color: '#9068fd' },
+  { id: 'cat-life', name: 'Быт', color: '#eb8f7f' },
 ];
 
 const d = (offsetDays: number) =>

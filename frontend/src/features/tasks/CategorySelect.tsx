@@ -7,9 +7,13 @@ import {
   TextInput,
   Button,
   Stack,
+  Text,
+  Divider,
+  Tooltip,
 } from '@mantine/core';
-import { IconPlus } from '@tabler/icons-react';
-import { useTasksStore } from '../../store/tasks';
+import { modals } from '@mantine/modals';
+import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { useTasksStore, type Category } from '../../store/tasks';
 import { ColorSwatchPicker } from '../../components/ui/ColorSwatchPicker';
 import { PALETTE_VALUES } from '../../lib/palette';
 
@@ -21,6 +25,7 @@ interface Props {
 export function CategorySelect({ value, onChange }: Props) {
   const categories = useTasksStore((s) => s.categories);
   const addCategory = useTasksStore((s) => s.addCategory);
+  const deleteCategory = useTasksStore((s) => s.deleteCategory);
 
   const [opened, setOpened] = useState(false);
   const [name, setName] = useState('');
@@ -37,6 +42,21 @@ export function CategorySelect({ value, onChange }: Props) {
     setColor(PALETTE_VALUES[0]);
     setOpened(false);
   };
+
+  const confirmDelete = (cat: Category) =>
+    modals.openConfirmModal({
+      title: 'Удалить категорию?',
+      centered: true,
+      children: (
+        <Text size="sm">
+          Категория «{cat.name}» будет удалена. Задачи с ней останутся, но
+          потеряют эту категорию. Действие необратимо.
+        </Text>
+      ),
+      labels: { confirm: 'Удалить', cancel: 'Отмена' },
+      confirmProps: { color: 'red' },
+      onConfirm: () => deleteCategory(cat.id),
+    });
 
   return (
     <Group gap="xs" align="flex-end" wrap="nowrap">
@@ -71,24 +91,64 @@ export function CategorySelect({ value, onChange }: Props) {
         opened={opened}
         onChange={setOpened}
         position="bottom-end"
-        width={230}
+        width={260}
         withArrow
         trapFocus
       >
         <Popover.Target>
-          <ActionIcon
-            variant="light"
-            size="lg"
-            aria-label="Новая категория"
-            onClick={() => setOpened((o) => !o)}
-          >
-            <IconPlus size={18} />
-          </ActionIcon>
+          <Tooltip label="Категории" withArrow>
+            <ActionIcon
+              variant="light"
+              size="lg"
+              aria-label="Категории"
+              onClick={() => setOpened((o) => !o)}
+            >
+              <IconPlus size={18} />
+            </ActionIcon>
+          </Tooltip>
         </Popover.Target>
         <Popover.Dropdown>
           <Stack gap="sm">
+            {categories.length > 0 && (
+              <Stack gap={4}>
+                <Text size="xs" c="dimmed" fw={600}>
+                  Твои категории
+                </Text>
+                {categories.map((c) => (
+                  <Group key={c.id} justify="space-between" wrap="nowrap">
+                    <Group gap={8} wrap="nowrap">
+                      <span
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 4,
+                          background: c.color,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <Text size="sm" truncate>
+                        {c.name}
+                      </Text>
+                    </Group>
+                    <ActionIcon
+                      variant="subtle"
+                      color="red"
+                      size="sm"
+                      aria-label={`Удалить категорию ${c.name}`}
+                      onClick={() => confirmDelete(c)}
+                    >
+                      <IconTrash size={15} />
+                    </ActionIcon>
+                  </Group>
+                ))}
+                <Divider my={4} />
+              </Stack>
+            )}
+
+            <Text size="xs" c="dimmed" fw={600}>
+              Новая категория
+            </Text>
             <TextInput
-              label="Название категории"
               placeholder="Например, Учёба"
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
