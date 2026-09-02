@@ -3,13 +3,19 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  closestCorners,
   useSensor,
   useSensors,
-  useDraggable,
   useDroppable,
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Checkbox, ActionIcon, Menu } from '@mantine/core';
 import {
   IconPlus,
@@ -31,6 +37,7 @@ const COLUMNS: { status: TaskStatus; title: string }[] = [
   { status: 'in_progress', title: 'В работе' },
   { status: 'done', title: 'Готово' },
 ];
+const STATUSES = COLUMNS.map((c) => c.status) as string[];
 
 function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
   const toggleDone = useTasksStore((s) => s.toggleDone);
@@ -112,16 +119,20 @@ function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
   );
 }
 
-function DraggableCard({ task }: { task: Task }) {
+function SortableCard({ task }: { task: Task }) {
   const openEdit = useTaskEditor((s) => s.openEdit);
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: task.id,
-  });
-  // роль/таб-индекс выносим явно (для читалок экрана и линтера доступности)
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
   const { role, tabIndex, ...a11y } = attributes;
 
   return (
-    // роль и клавиатура заданы через dnd-kit (role/tabIndex/onKeyDown) — доступно
+    // роль и клавиатура заданы через dnd-kit — доступно
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
       ref={setNodeRef}
@@ -129,6 +140,7 @@ function DraggableCard({ task }: { task: Task }) {
       tabIndex={tabIndex}
       className={styles.cardWrap}
       data-dragging={isDragging || undefined}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
       onClick={() => openEdit(task.id)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
@@ -167,11 +179,16 @@ function Column({
         <span className={styles.count}>{tasks.length}</span>
       </div>
 
-      <div className={styles.cards}>
-        {tasks.map((task) => (
-          <DraggableCard key={task.id} task={task} />
-        ))}
-      </div>
+      <SortableContext
+        items={tasks.map((t) => t.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div className={styles.cards}>
+          {tasks.map((task) => (
+            <SortableCard key={task.id} task={task} />
+          ))}
+        </div>
+      </SortableContext>
 
       <button
         type="button"
@@ -188,6 +205,7 @@ function Column({
 export function BoardPage() {
   const tasks = useTasksStore((s) => s.tasks);
   const updateTask = useTasksStore((s) => s.updateTask);
+  const moveTask = useTasksStore((s) => s.moveTask);
   const activeWorkspace = useWorkspaceStore((s) => s.activeId);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -203,21 +221,36 @@ export function BoardPage() {
 
   const onDragEnd = (e: DragEndEvent) => {
     setActiveTask(null);
-    const overId = e.over?.id as TaskStatus | undefined;
-    if (!overId) return;
-    const task = visible.find((t) => t.id === e.active.id);
-    if (task && task.status !== overId) {
-      updateTask(task.id, { status: overId });
+    if (!e.over) return;
+    const active = visible.find((t) => t.id === e.active.id);
+    if (!active) return;
+    const overId = String(e.over.id);
+
+    // брошено на колонку (пустая область) — меняем статус
+    if (STATUSES.includes(overId)) {
+      if (active.status !== overId) {
+        updateTask(active.id, { status: overId as TaskStatus });
+      }
+      return;
     }
+
+    // брошено на карточку — меняем порядок (и статус, если колонка другая)
+    const overTask = visible.find((t) => t.id === overId);
+    if (!overTask) return;
+    if (active.status !== overTask.status) {
+      updateTask(active.id, { status: overTask.status });
+    }
+    moveTask(active.id, overTask.id);
   };
 
   return (
     <PageShell
       title="Доска"
-      description="Перетаскивай карточки между колонками. Клик — детали, галочка — готово."
+      description="Перетаскивай между колонками и меняй порядок внутри. Клик — детали."
     >
       <DndContext
         sensors={sensors}
+        collisionDetection={closestCorners}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
