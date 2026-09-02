@@ -22,6 +22,7 @@
   --app-accent: #e5449a;
   --app-accent-soft: #fce1ef;
   --app-frame: #ec57a2;
+  --app-frame-shadow: 0 10px 40px rgb(180 40 110 / 25%);
   --app-shadow: 0 6px 20px rgb(200 60 130 / 14%);
 }
 
@@ -61,7 +62,8 @@ html[data-mantine-color-scheme='light'] {
   --app-text-dim: #9aa0aa;
   --app-accent: #91a7ff;
   --app-accent-soft: #24273a;
-  --app-frame: transparent;
+  --app-frame: #0e0f13;
+  --app-frame-shadow: 0 10px 40px rgb(0 0 0 / 55%);
   --app-shadow: 0 4px 14px rgb(0 0 0 / 40%);
 }
 
@@ -77,25 +79,22 @@ body,
 }
 
 body {
-  background: var(--app-bg);
+  // фон-подложка вокруг приложения (розовая в светлой, тёмная в тёмной)
+  background: var(--app-frame);
   color: var(--app-text);
+  padding: 10px;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-// Яркая розовая рамка вокруг приложения — только в светлой теме
-[data-mantine-color-scheme='light'] body {
-  background: var(--app-frame);
-  padding: 10px;
-}
-
-[data-mantine-color-scheme='light'] #root {
+// Скруглённый контейнер приложения — в обеих темах одинаково
+#root {
   border-radius: 22px;
   overflow: hidden;
   background: var(--app-bg);
-  box-shadow: 0 10px 40px rgb(180 40 110 / 25%);
+  box-shadow: var(--app-frame-shadow);
 }
 
 a {
