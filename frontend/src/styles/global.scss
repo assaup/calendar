@@ -78,11 +78,17 @@ body,
   margin: 0;
 }
 
-body {
-  // фон-подложка вокруг приложения (розовая в светлой, тёмная в тёмной)
+// Фон-подложка + отступ рамки держим на <html>, а не на <body>:
+// Mantine при открытии модалок меняет padding у <body> (блокировка прокрутки),
+// из-за чего рамка «прыгала». На <html> он не влияет.
+html {
   background: var(--app-frame);
-  color: var(--app-text);
   padding: 10px;
+}
+
+body {
+  background: transparent;
+  color: var(--app-text);
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
