@@ -9,10 +9,13 @@
 }
 
 .column {
-  flex: 0 0 280px;
+  flex: 0 0 300px;
   background: var(--app-surface-2);
   border-radius: $radius-lg;
   padding: $space-sm;
+  display: flex;
+  flex-direction: column;
+  gap: $space-sm;
 }
 
 .columnHead {
@@ -36,12 +39,80 @@
 }
 
 .card {
-  padding: $space-sm $space-md;
-  cursor: grab;
   background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: $radius-md;
+  padding: 10px $space-md;
+  cursor: pointer;
+  transition:
+    box-shadow 0.12s ease,
+    transform 0.08s ease;
+
+  &:hover {
+    box-shadow: var(--app-shadow);
+    transform: translateY(-1px);
+  }
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
 }
 
 .cardTitle {
+  flex: 1;
   font-size: 14px;
   font-weight: 500;
+
+  &[data-done] {
+    color: var(--app-text-dim);
+    text-decoration: line-through;
+  }
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  margin-top: 8px;
+  padding-left: 26px;
+  min-height: 20px;
+}
+
+.due {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--app-text-dim);
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px $space-sm;
+  border: none;
+  background: transparent;
+  color: var(--app-text-dim);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition:
+    background 0.1s ease,
+    color 0.1s ease;
+
+  &:hover {
+    background: var(--app-surface);
+    color: var(--app-text);
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .column {
+    flex: 0 0 82%;
+  }
 }

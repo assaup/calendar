@@ -1,56 +1,116 @@
-import { Badge, Button, Card, Checkbox } from '@mantine/core';
-import { IconPlus } from '@tabler/icons-react';
+import { Button, Checkbox, ActionIcon, Menu } from '@mantine/core';
+import {
+  IconPlus,
+  IconDots,
+  IconPencil,
+  IconTrash,
+  IconCalendar,
+} from '@tabler/icons-react';
+import dayjs from 'dayjs';
 import { PageShell } from '../../components/ui/PageShell';
+import { CategoryBadge } from '../../components/ui/CategoryBadge';
+import { useTasksStore } from '../../store/tasks';
+import { useWorkspaceStore } from '../../store/workspace';
+import { useTaskEditor } from '../tasks/taskEditor';
 import styles from './TodoPage.module.scss';
 
-const tasks = [
-  {
-    id: 1,
-    title: 'Смонтировать ролик',
-    due: 'Сегодня',
-    cat: 'Работа',
-    color: 'blue',
-    done: false,
-  },
-  {
-    id: 2,
-    title: 'Купить продукты',
-    due: 'Завтра',
-    cat: 'Дом',
-    color: 'green',
-    done: false,
-  },
-  {
-    id: 3,
-    title: 'Оплатить интернет',
-    due: '5 сен',
-    cat: 'Быт',
-    color: 'orange',
-    done: true,
-  },
-];
-
 export function TodoPage() {
+  const tasks = useTasksStore((s) => s.tasks);
+  const toggleDone = useTasksStore((s) => s.toggleDone);
+  const deleteTask = useTasksStore((s) => s.deleteTask);
+  const activeWorkspace = useWorkspaceStore((s) => s.activeId);
+  const openNew = useTaskEditor((s) => s.openNew);
+  const openEdit = useTaskEditor((s) => s.openEdit);
+
+  const visible = tasks
+    .filter((t) => t.workspaceId === activeWorkspace)
+    .sort((a, b) => {
+      const doneA = a.status === 'done' ? 1 : 0;
+      const doneB = b.status === 'done' ? 1 : 0;
+      if (doneA !== doneB) return doneA - doneB;
+      return (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999');
+    });
+
   return (
     <PageShell
       title="Задачи"
-      description="Плоский список со сроками и категориями. Фильтры — на Этапе 4."
-      action={<Button leftSection={<IconPlus size={16} />}>Добавить</Button>}
+      description="Все задачи пространства одним списком."
+      action={
+        <Button leftSection={<IconPlus size={16} />} onClick={() => openNew()}>
+          Добавить
+        </Button>
+      }
     >
-      <Card withBorder radius="md" p={0}>
-        {tasks.map((t) => (
-          <div key={t.id} className={styles.row}>
-            <Checkbox defaultChecked={t.done} />
-            <span className={t.done ? styles.titleDone : styles.title}>
-              {t.title}
-            </span>
-            <Badge size="sm" variant="light" color={t.color}>
-              {t.cat}
-            </Badge>
-            <span className={styles.due}>{t.due}</span>
-          </div>
-        ))}
-      </Card>
+      {visible.length === 0 ? (
+        <div className={styles.empty}>
+          Пока пусто. Нажми «Добавить», чтобы создать первую задачу.
+        </div>
+      ) : (
+        <div className={styles.list}>
+          {visible.map((task) => (
+            <div
+              key={task.id}
+              className={styles.row}
+              onClick={() => openEdit(task.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && openEdit(task.id)}
+            >
+              <Checkbox
+                size="sm"
+                checked={task.status === 'done'}
+                onChange={() => toggleDone(task.id)}
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Готово"
+              />
+              <span
+                className={styles.title}
+                data-done={task.status === 'done' || undefined}
+              >
+                {task.title}
+              </span>
+
+              <CategoryBadge categoryId={task.categoryId} />
+
+              {task.dueDate && (
+                <span className={styles.due}>
+                  <IconCalendar size={13} />
+                  {dayjs(task.dueDate).format('D MMM')}
+                </span>
+              )}
+
+              <Menu shadow="md" position="bottom-end" width={160}>
+                <Menu.Target>
+                  <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size="sm"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Меню задачи"
+                  >
+                    <IconDots size={16} />
+                  </ActionIcon>
+                </Menu.Target>
+                <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
+                  <Menu.Item
+                    leftSection={<IconPencil size={15} />}
+                    onClick={() => openEdit(task.id)}
+                  >
+                    Редактировать
+                  </Menu.Item>
+                  <Menu.Item
+                    color="red"
+                    leftSection={<IconTrash size={15} />}
+                    onClick={() => deleteTask(task.id)}
+                  >
+                    Удалить
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
+            </div>
+          ))}
+        </div>
+      )}
     </PageShell>
   );
 }

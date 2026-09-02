@@ -1,32 +1,56 @@
 @use '../../styles/variables' as *;
 
+.list {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
 .row {
   display: flex;
   align-items: center;
   gap: $space-md;
-  padding: 14px $space-md;
+  padding: 12px $space-md;
   border-bottom: 1px solid var(--app-border);
+  cursor: pointer;
+  transition: background 0.1s ease;
 
   &:last-child {
     border-bottom: none;
+  }
+
+  &:hover {
+    background: var(--app-surface-2);
   }
 }
 
 .title {
   flex: 1;
   font-size: 15px;
-}
 
-.titleDone {
-  flex: 1;
-  font-size: 15px;
-  color: var(--app-text-dim);
-  text-decoration: line-through;
+  &[data-done] {
+    color: var(--app-text-dim);
+    text-decoration: line-through;
+  }
 }
 
 .due {
-  color: var(--app-text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
-  min-width: 60px;
-  text-align: right;
+  color: var(--app-text-dim);
+  min-width: 74px;
+  justify-content: flex-end;
+}
+
+.empty {
+  color: var(--app-text-dim);
+  font-size: 14px;
+  padding: $space-xl;
+  text-align: center;
+  background: var(--app-surface);
+  border: 1px dashed var(--app-border);
+  border-radius: $radius-md;
 }

@@ -1,0 +1,157 @@
+@use '../../styles/variables' as *;
+
+.calendar {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--app-border);
+}
+
+.weekday {
+  padding: 10px $space-sm;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--app-text-dim);
+  text-align: left;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.week {
+  position: relative;
+  border-bottom: 1px solid var(--app-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.dayRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.dayCell {
+  border: none;
+  border-right: 1px solid var(--app-border);
+  background: transparent;
+  padding: 6px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  display: block;
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &:hover {
+    background: var(--app-surface-2);
+  }
+
+  &[data-outside] {
+    background: color-mix(in srgb, var(--app-surface-2) 45%, transparent);
+  }
+
+  &[data-outside] .dayNumber {
+    color: var(--app-text-dim);
+    opacity: 0.6;
+  }
+}
+
+.dayNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 50%;
+
+  &[data-today] {
+    background: var(--app-accent);
+    color: #fff;
+    font-weight: 700;
+  }
+}
+
+.bars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bar {
+  position: absolute;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  border: none;
+  border-radius: $radius-sm;
+  background: var(--app-surface-2);
+  color: var(--app-text);
+  padding: 0 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: var(--app-shadow);
+  transition:
+    transform 0.08s ease,
+    filter 0.1s ease;
+
+  &:hover {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+  }
+
+  &[data-cont-left] {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+
+  &[data-cont-right] {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  &[data-done] {
+    opacity: 0.55;
+  }
+
+  &[data-done] .barTitle {
+    text-decoration: line-through;
+  }
+}
+
+.barTitle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .weekday {
+    text-align: center;
+    padding: 8px 2px;
+  }
+
+  .barTitle {
+    font-size: 11px;
+  }
+}

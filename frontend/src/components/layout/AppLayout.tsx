@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { ActionIcon, Burger } from '@mantine/core';
-import { IconLayoutSidebarLeftCollapse } from '@tabler/icons-react';
+import { Burger } from '@mantine/core';
 import { Sidebar } from './Sidebar';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { ThemeToggle } from './ThemeToggle';
+import { TaskModal } from '../../features/tasks/TaskModal';
 import styles from './AppLayout.module.scss';
 
 export function AppLayout() {
@@ -44,15 +44,6 @@ export function AppLayout() {
           </div>
           <div className={styles.topbarRight}>
             <ThemeToggle />
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              size="lg"
-              aria-label="Свернуть"
-              visibleFrom="sm"
-            >
-              <IconLayoutSidebarLeftCollapse size={20} />
-            </ActionIcon>
           </div>
         </header>
 
@@ -60,6 +51,9 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Единое окно создания/редактирования задачи */}
+      <TaskModal />
     </div>
   );
 }
