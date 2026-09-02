@@ -28,3 +28,9 @@
 .chevron {
   color: var(--app-text-dim);
 }
+
+.itemRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
