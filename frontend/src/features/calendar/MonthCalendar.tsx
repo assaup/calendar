@@ -13,11 +13,10 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { IconCheck } from '@tabler/icons-react';
-import { useTasksStore, type Task } from '../../store/tasks';
+import { useTasksStore, PRIORITY_META, type Task } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
 import { contrastText } from '../../lib/palette';
-import { PriorityFlag } from '../../components/ui/PriorityFlag';
 import styles from './MonthCalendar.module.scss';
 
 const DATE_ROW_H = 34;
@@ -181,6 +180,7 @@ function TaskBar({
       data-cont-right={seg.continuesRight || undefined}
       data-dragging={drag.isDragging || undefined}
       data-over={drop.isOver && !drag.isDragging ? 'true' : undefined}
+      data-prio={seg.task.priority || undefined}
       style={{
         top: DATE_ROW_H + seg.lane * (BAR_H + BAR_GAP),
         left: `calc(${(seg.colStart / 7) * 100}% + 4px)`,
@@ -188,6 +188,9 @@ function TaskBar({
         height: BAR_H,
         background: color,
         color: contrastText(color),
+        ...(seg.task.priority
+          ? { ['--prio']: PRIORITY_META[seg.task.priority].color }
+          : {}),
       }}
       onClick={() => onOpen(seg.task.id)}
       onKeyDown={(e) => {
@@ -213,7 +216,6 @@ function TaskBar({
       >
         {done && <IconCheck size={12} stroke={3.5} />}
       </button>
-      <PriorityFlag priority={seg.task.priority} size={12} />
       <span className={styles.barTitle}>{seg.task.title}</span>
     </div>
   );

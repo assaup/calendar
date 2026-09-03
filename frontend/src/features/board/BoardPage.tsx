@@ -30,7 +30,7 @@ import {
 import dayjs, { type Dayjs } from 'dayjs';
 import { PageShell } from '../../components/ui/PageShell';
 import { CategoryBadge } from '../../components/ui/CategoryBadge';
-import { PriorityFlag } from '../../components/ui/PriorityFlag';
+import { PriorityBadge } from '../../components/ui/PriorityBadge';
 import {
   useTasksStore,
   isOverdue,
@@ -80,7 +80,6 @@ function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
           onPointerDown={(e) => e.stopPropagation()}
           aria-label="Готово"
         />
-        <PriorityFlag priority={task.priority} />
         <span
           className={styles.cardTitle}
           data-done={task.status === 'done' || undefined}
@@ -118,10 +117,12 @@ function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
         </Menu>
       </div>
 
-      {(task.categoryId ||
+      {(task.priority ||
+        task.categoryId ||
         task.dueDate ||
         (task.subtasks?.length ?? 0) > 0) && (
         <div className={styles.cardMeta}>
+          <PriorityBadge priority={task.priority} />
           <CategoryBadge categoryId={task.categoryId} />
           {(task.subtasks?.length ?? 0) > 0 && (
             <span className={styles.subs}>

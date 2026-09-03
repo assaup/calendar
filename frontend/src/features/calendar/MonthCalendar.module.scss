@@ -172,6 +172,17 @@
   }
 }
 
+// цветная полоска приоритета слева (вместо флажка)
+.bar[data-prio]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--prio);
+}
+
 .barCheck {
   flex-shrink: 0;
   width: 16px;
