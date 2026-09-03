@@ -27,33 +27,54 @@
   margin-bottom: $space-sm;
 }
 
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+$grid-cols: 34px minmax(0, 1fr) 130px 160px 120px 40px;
+
+.tableWrap {
+  overflow-x: auto;
 }
 
-.row {
-  display: flex;
-  align-items: center;
-  gap: $space-sm;
-  padding: 12px $space-md;
+.table {
+  min-width: 640px;
   background: var(--app-surface);
   border: 1px solid var(--app-border);
   border-radius: $radius-md;
-  cursor: pointer;
-  transition:
-    box-shadow 0.12s ease,
-    transform 0.08s ease;
+  overflow: hidden;
+}
+
+.tableHead {
+  display: grid;
+  grid-template-columns: $grid-cols;
+  align-items: center;
+  gap: $space-sm;
+  padding: 10px $space-md;
+  border-bottom: 1px solid var(--app-border);
+  background: var(--app-surface-2);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--app-text-dim);
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: $grid-cols;
+  align-items: center;
+  gap: $space-sm;
+  padding: 10px $space-md;
+  border-bottom: 1px solid var(--app-border);
+  transition: background 0.1s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
 
   &:hover {
-    box-shadow: var(--app-shadow);
-    transform: translateY(-1px);
+    background: var(--app-surface-2);
   }
 }
 
-.main {
-  flex: 1;
+.titleCell {
   min-width: 0;
   display: flex;
   align-items: center;
@@ -67,10 +88,20 @@
   cursor: pointer;
 }
 
+.cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.dash {
+  color: var(--app-text-dim);
+  opacity: 0.5;
+}
+
 .title {
   font-size: 15px;
   min-width: 0;
-  flex: 0 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

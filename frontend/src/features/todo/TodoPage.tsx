@@ -180,87 +180,109 @@ export function TodoPage() {
           <div className={styles.resultCount}>
             Показано: {visible.length} из {inWorkspace.length}
           </div>
-          <div className={styles.list}>
-            {visible.map((task) => {
-              const subs = task.subtasks ?? [];
-              const subsDone = subs.filter((s) => s.done).length;
-              const overdue = isOverdue(task);
-              const cat = categories.find((c) => c.id === task.categoryId);
-              const tint = cat
-                ? {
-                    background: `color-mix(in srgb, ${cat.color} 15%, var(--app-surface))`,
-                    borderColor: `color-mix(in srgb, ${cat.color} 45%, var(--app-border))`,
-                  }
-                : undefined;
-              return (
-                <div key={task.id} className={styles.row} style={tint}>
-                  <Checkbox
-                    size="sm"
-                    checked={task.status === 'done'}
-                    onChange={() => toggleDone(task.id)}
-                    aria-label="Готово"
-                  />
-                  <button
-                    type="button"
-                    className={styles.main}
-                    onClick={() => openEdit(task.id)}
-                  >
-                    <span
-                      className={styles.title}
-                      data-done={task.status === 'done' || undefined}
-                    >
-                      {task.title}
-                    </span>
-                    <PriorityBadge priority={task.priority} />
-                    <CategoryBadge categoryId={task.categoryId} />
-                    {subs.length > 0 && (
-                      <span className={styles.subs}>
-                        <IconListCheck size={13} />
-                        {subsDone}/{subs.length}
-                      </span>
-                    )}
-                    {task.dueDate && (
-                      <span
-                        className={styles.due}
-                        data-overdue={overdue || undefined}
-                      >
-                        <IconCalendar size={13} />
-                        {dayjs(task.dueDate).format('D MMM')}
-                      </span>
-                    )}
-                  </button>
+          <div className={styles.tableWrap}>
+            <div className={styles.table}>
+              <div className={styles.tableHead}>
+                <span />
+                <span>Задача</span>
+                <span>Приоритет</span>
+                <span>Категория</span>
+                <span>Срок</span>
+                <span />
+              </div>
 
-                  <Menu shadow="md" position="bottom-end" width={160}>
-                    <Menu.Target>
-                      <ActionIcon
-                        variant="subtle"
-                        color="gray"
-                        size="sm"
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label="Меню задачи"
+              {visible.map((task) => {
+                const subs = task.subtasks ?? [];
+                const subsDone = subs.filter((s) => s.done).length;
+                const overdue = isOverdue(task);
+                return (
+                  <div key={task.id} className={styles.tableRow}>
+                    <Checkbox
+                      size="sm"
+                      checked={task.status === 'done'}
+                      onChange={() => toggleDone(task.id)}
+                      aria-label="Готово"
+                    />
+                    <button
+                      type="button"
+                      className={styles.titleCell}
+                      onClick={() => openEdit(task.id)}
+                    >
+                      <span
+                        className={styles.title}
+                        data-done={task.status === 'done' || undefined}
                       >
-                        <IconDots size={16} />
-                      </ActionIcon>
-                    </Menu.Target>
-                    <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
-                      <Menu.Item
-                        leftSection={<IconPencil size={15} />}
-                        onClick={() => openEdit(task.id)}
-                      >
-                        Редактировать
-                      </Menu.Item>
-                      <Menu.Item
-                        color="red"
-                        leftSection={<IconTrash size={15} />}
-                        onClick={() => deleteTask(task.id)}
-                      >
-                        Удалить
-                      </Menu.Item>
-                    </Menu.Dropdown>
-                  </Menu>
-                </div>
-              );
-            })}
+                        {task.title}
+                      </span>
+                      {subs.length > 0 && (
+                        <span className={styles.subs}>
+                          <IconListCheck size={13} />
+                          {subsDone}/{subs.length}
+                        </span>
+                      )}
+                    </button>
+
+                    <span className={styles.cell}>
+                      {task.priority ? (
+                        <PriorityBadge priority={task.priority} />
+                      ) : (
+                        <span className={styles.dash}>—</span>
+                      )}
+                    </span>
+
+                    <span className={styles.cell}>
+                      {task.categoryId ? (
+                        <CategoryBadge categoryId={task.categoryId} />
+                      ) : (
+                        <span className={styles.dash}>—</span>
+                      )}
+                    </span>
+
+                    <span className={styles.cell}>
+                      {task.dueDate ? (
+                        <span
+                          className={styles.due}
+                          data-overdue={overdue || undefined}
+                        >
+                          <IconCalendar size={13} />
+                          {dayjs(task.dueDate).format('D MMM')}
+                        </span>
+                      ) : (
+                        <span className={styles.dash}>—</span>
+                      )}
+                    </span>
+
+                    <Menu shadow="md" position="bottom-end" width={160}>
+                      <Menu.Target>
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          size="sm"
+                          aria-label="Меню задачи"
+                        >
+                          <IconDots size={16} />
+                        </ActionIcon>
+                      </Menu.Target>
+                      <Menu.Dropdown>
+                        <Menu.Item
+                          leftSection={<IconPencil size={15} />}
+                          onClick={() => openEdit(task.id)}
+                        >
+                          Редактировать
+                        </Menu.Item>
+                        <Menu.Item
+                          color="red"
+                          leftSection={<IconTrash size={15} />}
+                          onClick={() => deleteTask(task.id)}
+                        >
+                          Удалить
+                        </Menu.Item>
+                      </Menu.Dropdown>
+                    </Menu>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </>
       )}
