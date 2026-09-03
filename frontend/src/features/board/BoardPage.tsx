@@ -16,7 +16,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Checkbox, ActionIcon, Menu } from '@mantine/core';
+import { Checkbox, ActionIcon, Menu, Title } from '@mantine/core';
 import {
   IconPlus,
   IconDots,
@@ -24,20 +24,31 @@ import {
   IconTrash,
   IconCalendar,
   IconListCheck,
+  IconChevronLeft,
+  IconChevronRight,
 } from '@tabler/icons-react';
-import dayjs from 'dayjs';
+import dayjs, { type Dayjs } from 'dayjs';
 import { PageShell } from '../../components/ui/PageShell';
 import { CategoryBadge } from '../../components/ui/CategoryBadge';
 import { PriorityFlag } from '../../components/ui/PriorityFlag';
-import { useTasksStore, isOverdue, type Task } from '../../store/tasks';
+import {
+  useTasksStore,
+  isOverdue,
+  type Task,
+  type TaskStatus,
+} from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
 import styles from './BoardPage.module.scss';
 
-type ColumnId = 'month' | 'backlog';
-const TODAY = dayjs().format('YYYY-MM-DD');
-const MONTH_KEY = dayjs().format('YYYY-MM');
-const inThisMonth = (t: Task) => !!t.dueDate && t.dueDate.startsWith(MONTH_KEY);
+type ColumnId = TaskStatus | 'nodate';
+
+const STATUS_COLUMNS: { id: TaskStatus; title: string }[] = [
+  { id: 'todo', title: 'К выполнению' },
+  { id: 'in_progress', title: 'В работе' },
+  { id: 'done', title: 'Готово' },
+];
+const ALL_IDS: ColumnId[] = ['todo', 'in_progress', 'done', 'nodate'];
 
 function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
   const toggleDone = useTasksStore((s) => s.toggleDone);
@@ -176,6 +187,7 @@ function Column({
   title,
   hint,
   tasks,
+  onCollapse,
   quickOpen,
   onQuickOpen,
   quickText,
@@ -185,8 +197,9 @@ function Column({
 }: {
   id: ColumnId;
   title: string;
-  hint: string;
+  hint?: string;
   tasks: Task[];
+  onCollapse?: () => void;
   quickOpen: boolean;
   onQuickOpen: () => void;
   quickText: string;
@@ -201,13 +214,27 @@ function Column({
       ref={setNodeRef}
       className={styles.column}
       data-over={isOver || undefined}
+      data-nodate={id === 'nodate' || undefined}
     >
       <div className={styles.columnHead}>
         <div>
           <div className={styles.columnTitle}>{title}</div>
-          <div className={styles.columnHint}>{hint}</div>
+          {hint && <div className={styles.columnHint}>{hint}</div>}
         </div>
-        <span className={styles.count}>{tasks.length}</span>
+        <div className={styles.columnHeadRight}>
+          <span className={styles.count}>{tasks.length}</span>
+          {onCollapse && (
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="sm"
+              aria-label="Свернуть колонку"
+              onClick={onCollapse}
+            >
+              <IconChevronRight size={16} />
+            </ActionIcon>
+          )}
+        </div>
       </div>
 
       <SortableContext
@@ -252,6 +279,8 @@ export function BoardPage() {
   const moveTask = useTasksStore((s) => s.moveTask);
   const activeWorkspace = useWorkspaceStore((s) => s.activeId);
 
+  const [month, setMonth] = useState<Dayjs>(() => dayjs().startOf('month'));
+  const [noDateCollapsed, setNoDateCollapsed] = useState(false);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [quickCol, setQuickCol] = useState<ColumnId | null>(null);
   const [quickText, setQuickText] = useState('');
@@ -260,56 +289,69 @@ export function BoardPage() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
-  // на доске показываем невыполненные задачи пространства
-  const visible = tasks.filter(
-    (t) => t.workspaceId === activeWorkspace && t.status !== 'done',
-  );
-  const monthTasks = visible.filter(inThisMonth);
-  const backlogTasks = visible.filter((t) => !inThisMonth(t));
+  const monthKey = month.format('YYYY-MM');
+  const inMonth = (t: Task) => !!t.dueDate && t.dueDate.startsWith(monthKey);
+  // дата по умолчанию при переносе в месяц: сегодня (если текущий) или 1-е число
+  const monthDefaultDate = month.isSame(dayjs(), 'month')
+    ? dayjs().format('YYYY-MM-DD')
+    : month.startOf('month').format('YYYY-MM-DD');
+
+  const wsTasks = tasks.filter((t) => t.workspaceId === activeWorkspace);
+  const tasksOf = (id: ColumnId): Task[] =>
+    id === 'nodate'
+      ? wsTasks.filter((t) => !t.dueDate && t.status !== 'done')
+      : wsTasks.filter((t) => inMonth(t) && t.status === id);
 
   const columnOf = (t: Task): ColumnId =>
-    inThisMonth(t) ? 'month' : 'backlog';
+    !t.dueDate ? 'nodate' : (t.status as ColumnId);
 
   const submitQuick = () => {
     const title = quickText.trim();
     if (title && quickCol) {
-      addTask({
-        workspaceId: activeWorkspace,
-        title,
-        dueDate: quickCol === 'month' ? TODAY : null,
-      });
+      if (quickCol === 'nodate') {
+        addTask({ workspaceId: activeWorkspace, title, dueDate: null });
+      } else {
+        addTask({
+          workspaceId: activeWorkspace,
+          title,
+          status: quickCol,
+          dueDate: monthDefaultDate,
+        });
+      }
     }
     setQuickCol(null);
     setQuickText('');
   };
 
   const onDragStart = (e: DragStartEvent) => {
-    setActiveTask(visible.find((t) => t.id === e.active.id) ?? null);
+    setActiveTask(wsTasks.find((t) => t.id === e.active.id) ?? null);
   };
 
   const onDragEnd = (e: DragEndEvent) => {
     setActiveTask(null);
     if (!e.over) return;
-    const active = visible.find((t) => t.id === e.active.id);
+    const active = wsTasks.find((t) => t.id === e.active.id);
     if (!active) return;
     const overId = String(e.over.id);
 
-    // целевая колонка: либо сама колонка, либо колонка задачи под курсором
     let target: ColumnId;
-    const overTask = visible.find((t) => t.id === overId);
-    if (overId === 'month' || overId === 'backlog') {
-      target = overId;
+    const overTask = wsTasks.find((t) => t.id === overId);
+    if ((ALL_IDS as string[]).includes(overId)) {
+      target = overId as ColumnId;
     } else if (overTask) {
       target = columnOf(overTask);
     } else {
       return;
     }
 
-    // при переносе между колонками меняем только срок (статус не трогаем)
-    if (target === 'month' && !inThisMonth(active)) {
-      updateTask(active.id, { dueDate: TODAY });
-    } else if (target === 'backlog' && inThisMonth(active)) {
-      updateTask(active.id, { dueDate: null });
+    if (target === 'nodate') {
+      if (active.dueDate) updateTask(active.id, { dueDate: null });
+    } else {
+      // статус-колонка
+      const patch: Partial<Omit<Task, 'id'>> = {};
+      if (!active.dueDate) patch.dueDate = monthDefaultDate;
+      if (active.status !== target) patch.status = target;
+      if (Object.keys(patch).length) updateTask(active.id, patch);
     }
 
     if (overTask && overTask.id !== active.id) {
@@ -317,13 +359,61 @@ export function BoardPage() {
     }
   };
 
-  const monthLabel = dayjs().format('MMMM');
+  const monthTitle = month.format('MMMM YYYY');
+  const monthLabel = monthTitle.charAt(0).toUpperCase() + monthTitle.slice(1);
+  const noDateTasks = tasksOf('nodate');
+
+  const quickProps = (id: ColumnId) => ({
+    quickOpen: quickCol === id,
+    onQuickOpen: () => {
+      setQuickCol(id);
+      setQuickText('');
+    },
+    quickText,
+    onQuickText: setQuickText,
+    onQuickSubmit: submitQuick,
+    onQuickCancel: () => {
+      setQuickCol(null);
+      setQuickText('');
+    },
+  });
 
   return (
     <PageShell
       title="Доска"
-      description="Перетаскивай задачи в «Этот месяц», чтобы взять их в работу. Статус не меняется."
+      description="Колонки по статусу для выбранного месяца + бэклог без срока."
     >
+      <div className={styles.toolbar}>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="lg"
+          aria-label="Предыдущий месяц"
+          onClick={() => setMonth((m) => m.subtract(1, 'month'))}
+        >
+          <IconChevronLeft size={18} />
+        </ActionIcon>
+        <Title order={4} className={styles.monthLabel}>
+          {monthLabel}
+        </Title>
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="lg"
+          aria-label="Следующий месяц"
+          onClick={() => setMonth((m) => m.add(1, 'month'))}
+        >
+          <IconChevronRight size={18} />
+        </ActionIcon>
+        <button
+          type="button"
+          className={styles.todayBtn}
+          onClick={() => setMonth(dayjs().startOf('month'))}
+        >
+          Текущий
+        </button>
+      </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -331,42 +421,37 @@ export function BoardPage() {
         onDragEnd={onDragEnd}
       >
         <div className={styles.board}>
-          <Column
-            id="month"
-            title="В этом месяце"
-            hint={monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}
-            tasks={monthTasks}
-            quickOpen={quickCol === 'month'}
-            onQuickOpen={() => {
-              setQuickCol('month');
-              setQuickText('');
-            }}
-            quickText={quickText}
-            onQuickText={setQuickText}
-            onQuickSubmit={submitQuick}
-            onQuickCancel={() => {
-              setQuickCol(null);
-              setQuickText('');
-            }}
-          />
-          <Column
-            id="backlog"
-            title="К выполнению"
-            hint="Без срока в этом месяце"
-            tasks={backlogTasks}
-            quickOpen={quickCol === 'backlog'}
-            onQuickOpen={() => {
-              setQuickCol('backlog');
-              setQuickText('');
-            }}
-            quickText={quickText}
-            onQuickText={setQuickText}
-            onQuickSubmit={submitQuick}
-            onQuickCancel={() => {
-              setQuickCol(null);
-              setQuickText('');
-            }}
-          />
+          {STATUS_COLUMNS.map((col) => (
+            <Column
+              key={col.id}
+              id={col.id}
+              title={col.title}
+              tasks={tasksOf(col.id)}
+              {...quickProps(col.id)}
+            />
+          ))}
+
+          {noDateCollapsed ? (
+            <button
+              type="button"
+              className={styles.collapsedCol}
+              onClick={() => setNoDateCollapsed(false)}
+              aria-label="Развернуть «Без срока»"
+            >
+              <IconChevronLeft size={16} />
+              <span className={styles.collapsedLabel}>Без срока</span>
+              <span className={styles.count}>{noDateTasks.length}</span>
+            </button>
+          ) : (
+            <Column
+              id="nodate"
+              title="Без срока"
+              hint="Бэклог — без даты"
+              tasks={noDateTasks}
+              onCollapse={() => setNoDateCollapsed(true)}
+              {...quickProps('nodate')}
+            />
+          )}
         </div>
 
         <DragOverlay>
