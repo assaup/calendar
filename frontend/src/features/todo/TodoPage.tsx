@@ -21,7 +21,7 @@ import {
 import dayjs from 'dayjs';
 import { PageShell } from '../../components/ui/PageShell';
 import { CategoryBadge } from '../../components/ui/CategoryBadge';
-import { PriorityFlag } from '../../components/ui/PriorityFlag';
+import { PriorityBadge } from '../../components/ui/PriorityBadge';
 import { useTasksStore, isOverdue, PRIORITY_META } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
@@ -185,8 +185,15 @@ export function TodoPage() {
               const subs = task.subtasks ?? [];
               const subsDone = subs.filter((s) => s.done).length;
               const overdue = isOverdue(task);
+              const cat = categories.find((c) => c.id === task.categoryId);
+              const tint = cat
+                ? {
+                    background: `color-mix(in srgb, ${cat.color} 15%, var(--app-surface))`,
+                    borderColor: `color-mix(in srgb, ${cat.color} 45%, var(--app-border))`,
+                  }
+                : undefined;
               return (
-                <div key={task.id} className={styles.row}>
+                <div key={task.id} className={styles.row} style={tint}>
                   <Checkbox
                     size="sm"
                     checked={task.status === 'done'}
@@ -198,13 +205,13 @@ export function TodoPage() {
                     className={styles.main}
                     onClick={() => openEdit(task.id)}
                   >
-                    <PriorityFlag priority={task.priority} />
                     <span
                       className={styles.title}
                       data-done={task.status === 'done' || undefined}
                     >
                       {task.title}
                     </span>
+                    <PriorityBadge priority={task.priority} />
                     <CategoryBadge categoryId={task.categoryId} />
                     {subs.length > 0 && (
                       <span className={styles.subs}>

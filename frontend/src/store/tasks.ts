@@ -18,7 +18,7 @@ export const PRIORITY_META: Record<
 > = {
   high: { label: 'Высокий', color: '#e03131', order: 0 },
   medium: { label: 'Средний', color: '#f08c00', order: 1 },
-  low: { label: 'Низкий', color: '#4c6ef5', order: 2 },
+  low: { label: 'Низкий', color: '#868e96', order: 2 },
 };
 
 export interface Category {

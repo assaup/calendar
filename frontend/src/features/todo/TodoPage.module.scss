@@ -28,10 +28,9 @@
 }
 
 .list {
-  background: var(--app-surface);
-  border: 1px solid var(--app-border);
-  border-radius: $radius-md;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .row {
@@ -39,16 +38,17 @@
   align-items: center;
   gap: $space-sm;
   padding: 12px $space-md;
-  border-bottom: 1px solid var(--app-border);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: $radius-md;
   cursor: pointer;
-  transition: background 0.1s ease;
-
-  &:last-child {
-    border-bottom: none;
-  }
+  transition:
+    box-shadow 0.12s ease,
+    transform 0.08s ease;
 
   &:hover {
-    background: var(--app-surface-2);
+    box-shadow: var(--app-shadow);
+    transform: translateY(-1px);
   }
 }
 
