@@ -1,5 +1,24 @@
 @use '../../styles/variables' as *;
 
+.filters {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  margin-bottom: $space-md;
+  flex-wrap: wrap;
+}
+
+.search {
+  flex: 1;
+  min-width: 200px;
+}
+
+.resultCount {
+  font-size: 13px;
+  color: var(--app-text-dim);
+  margin-bottom: $space-sm;
+}
+
 .list {
   background: var(--app-surface);
   border: 1px solid var(--app-border);
