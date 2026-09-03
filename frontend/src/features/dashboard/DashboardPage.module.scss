@@ -1,0 +1,208 @@
+@use '../../styles/variables' as *;
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $space-md;
+  margin-bottom: $space-lg;
+}
+
+.tile {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: $radius-md;
+  padding: $space-md $space-lg;
+}
+
+.tileLabel {
+  font-size: 13px;
+  color: var(--app-text-dim);
+  margin-bottom: 4px;
+}
+
+.tileValue {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.tileSub {
+  font-size: 12px;
+  color: var(--app-text-dim);
+  margin-top: 2px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $space-md;
+}
+
+.card {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: $radius-lg;
+  padding: $space-lg;
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: $space-md;
+}
+
+// --- Кольцевая ---
+.donutWrap {
+  display: flex;
+  align-items: center;
+  gap: $space-lg;
+  flex-wrap: wrap;
+}
+
+.donut {
+  width: 150px;
+  height: 150px;
+  flex-shrink: 0;
+}
+
+.donutTop {
+  text-anchor: middle;
+  font-size: 22px;
+  font-weight: 700;
+  fill: var(--app-text);
+}
+
+.donutBottom {
+  text-anchor: middle;
+  font-size: 11px;
+  fill: var(--app-text-dim);
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.legendDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  color: var(--app-text-dim);
+  min-width: 110px;
+}
+
+.legendValue {
+  font-weight: 700;
+}
+
+// --- Бары ---
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+}
+
+.barLabel {
+  width: 110px;
+  font-size: 13px;
+  color: var(--app-text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.barTrack {
+  flex: 1;
+  height: 12px;
+  background: var(--app-surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  min-width: 4px;
+  transition: width 0.3s ease;
+}
+
+.barValue {
+  width: 28px;
+  text-align: right;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+// --- Прогресс ---
+.progressBig {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+}
+
+.progressNum {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--app-accent);
+}
+
+.progressText {
+  font-size: 14px;
+  color: var(--app-text-dim);
+  margin: 6px 0 12px;
+}
+
+.progressTrack {
+  height: 14px;
+  background: var(--app-surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--app-accent);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.empty {
+  color: var(--app-text-dim);
+  font-size: 15px;
+  padding: $space-xl;
+  text-align: center;
+  background: var(--app-surface);
+  border: 1px dashed var(--app-border);
+  border-radius: $radius-md;
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .tiles {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

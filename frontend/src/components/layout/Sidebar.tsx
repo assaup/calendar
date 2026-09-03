@@ -6,16 +6,20 @@ import {
   IconChecklist,
   IconNote,
   IconLogout,
+  IconSun,
+  IconChartPie,
 } from '@tabler/icons-react';
 import { useAuth } from '../../features/auth/useAuth';
 import { LogoMark } from '../ui/LogoMark';
 import styles from './Sidebar.module.scss';
 
 const links = [
+  { to: '/today', label: 'Сегодня', icon: IconSun },
   { to: '/calendar', label: 'Календарь', icon: IconCalendar },
   { to: '/board', label: 'Доска', icon: IconLayoutKanban },
   { to: '/todo', label: 'Задачи', icon: IconChecklist },
   { to: '/notes', label: 'Заметки', icon: IconNote },
+  { to: '/dashboard', label: 'Панель', icon: IconChartPie },
 ];
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {

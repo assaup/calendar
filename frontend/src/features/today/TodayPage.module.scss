@@ -1,0 +1,110 @@
+@use '../../styles/variables' as *;
+
+.section {
+  margin-bottom: $space-lg;
+  max-width: 820px;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  margin-bottom: $space-sm;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--app-text-dim);
+  background: var(--app-surface-2);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.list {
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: $radius-md;
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  padding: 11px $space-md;
+  border-bottom: 1px solid var(--app-border);
+  border-left: 3px solid transparent;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: var(--app-surface-2);
+  }
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.title {
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &[data-done] {
+    color: var(--app-text-dim);
+    text-decoration: line-through;
+  }
+}
+
+.subs {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--app-text-dim);
+  flex-shrink: 0;
+}
+
+.due {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--app-text-dim);
+  min-width: 74px;
+  justify-content: flex-end;
+
+  &[data-overdue] {
+    color: #fa5252;
+    font-weight: 600;
+  }
+}
+
+.empty {
+  color: var(--app-text-dim);
+  font-size: 15px;
+  padding: $space-xl;
+  text-align: center;
+  background: var(--app-surface);
+  border: 1px dashed var(--app-border);
+  border-radius: $radius-md;
+  max-width: 820px;
+}
