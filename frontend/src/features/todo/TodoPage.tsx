@@ -46,9 +46,6 @@ export function TodoPage() {
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('due');
 
-  const catColor = (id: string | null) =>
-    categories.find((c) => c.id === id)?.color ?? 'transparent';
-
   const query = search.trim().toLowerCase();
 
   const inWorkspace = tasks.filter((t) => t.workspaceId === activeWorkspace);
@@ -189,11 +186,7 @@ export function TodoPage() {
               const subsDone = subs.filter((s) => s.done).length;
               const overdue = isOverdue(task);
               return (
-                <div
-                  key={task.id}
-                  className={styles.row}
-                  style={{ borderLeftColor: catColor(task.categoryId) }}
-                >
+                <div key={task.id} className={styles.row}>
                   <Checkbox
                     size="sm"
                     checked={task.status === 'done'}
@@ -219,17 +212,16 @@ export function TodoPage() {
                         {subsDone}/{subs.length}
                       </span>
                     )}
+                    {task.dueDate && (
+                      <span
+                        className={styles.due}
+                        data-overdue={overdue || undefined}
+                      >
+                        <IconCalendar size={13} />
+                        {dayjs(task.dueDate).format('D MMM')}
+                      </span>
+                    )}
                   </button>
-
-                  {task.dueDate && (
-                    <span
-                      className={styles.due}
-                      data-overdue={overdue || undefined}
-                    >
-                      <IconCalendar size={13} />
-                      {dayjs(task.dueDate).format('D MMM')}
-                    </span>
-                  )}
 
                   <Menu shadow="md" position="bottom-end" width={160}>
                     <Menu.Target>
