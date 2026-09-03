@@ -8,12 +8,20 @@ import {
   Group,
   Stack,
   Text,
+  Checkbox,
+  ActionIcon,
+  Progress,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
-import { IconTrash } from '@tabler/icons-react';
+import { IconTrash, IconPlus, IconX } from '@tabler/icons-react';
 import { useTaskEditor } from './taskEditor';
 import { CategorySelect } from './CategorySelect';
-import { useTasksStore, type TaskStatus } from '../../store/tasks';
+import {
+  useTasksStore,
+  type TaskStatus,
+  type Priority,
+  type SubTask,
+} from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 
 interface FormState {
@@ -21,6 +29,8 @@ interface FormState {
   description: string;
   categoryId: string | null;
   status: TaskStatus;
+  priority: Priority | null;
+  subtasks: SubTask[];
   startDate: string | null;
   dueDate: string | null;
 }
@@ -30,9 +40,16 @@ const blank: FormState = {
   description: '',
   categoryId: null,
   status: 'todo',
+  priority: null,
+  subtasks: [],
   startDate: null,
   dueDate: null,
 };
+
+const uid = () =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
 
 export function TaskModal() {
   const { opened, editingId, presetDate, presetStatus, close } =
@@ -41,10 +58,11 @@ export function TaskModal() {
   const activeWorkspace = useWorkspaceStore((s) => s.activeId);
 
   const [form, setForm] = useState<FormState>(blank);
+  const [subInput, setSubInput] = useState('');
 
-  // Заполняем форму при открытии
   useEffect(() => {
     if (!opened) return;
+    setSubInput('');
     if (editingId) {
       const t = tasks.find((x) => x.id === editingId);
       if (t) {
@@ -53,6 +71,8 @@ export function TaskModal() {
           description: t.description,
           categoryId: t.categoryId,
           status: t.status,
+          priority: t.priority ?? null,
+          subtasks: t.subtasks ?? [],
           startDate: t.startDate,
           dueDate: t.dueDate,
         });
@@ -70,6 +90,28 @@ export function TaskModal() {
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
+  const addSub = () => {
+    const title = subInput.trim();
+    if (!title) return;
+    set('subtasks', [...form.subtasks, { id: uid(), title, done: false }]);
+    setSubInput('');
+  };
+  const toggleSub = (id: string) =>
+    set(
+      'subtasks',
+      form.subtasks.map((s) => (s.id === id ? { ...s, done: !s.done } : s)),
+    );
+  const deleteSub = (id: string) =>
+    set(
+      'subtasks',
+      form.subtasks.filter((s) => s.id !== id),
+    );
+
+  const doneCount = form.subtasks.filter((s) => s.done).length;
+  const progress = form.subtasks.length
+    ? (doneCount / form.subtasks.length) * 100
+    : 0;
+
   const canSave = form.title.trim().length > 0;
 
   const handleSave = () => {
@@ -77,7 +119,17 @@ export function TaskModal() {
     if (editingId) {
       updateTask(editingId, form);
     } else {
-      addTask({ workspaceId: activeWorkspace, ...form });
+      const id = addTask({
+        workspaceId: activeWorkspace,
+        title: form.title,
+        description: form.description,
+        categoryId: form.categoryId,
+        status: form.status,
+        priority: form.priority,
+        startDate: form.startDate,
+        dueDate: form.dueDate,
+      });
+      if (form.subtasks.length) updateTask(id, { subtasks: form.subtasks });
     }
     close();
   };
@@ -122,6 +174,25 @@ export function TaskModal() {
 
         <div>
           <Text size="sm" fw={500} mb={6}>
+            Приоритет
+          </Text>
+          <SegmentedControl
+            fullWidth
+            value={form.priority ?? 'none'}
+            onChange={(v) =>
+              set('priority', v === 'none' ? null : (v as Priority))
+            }
+            data={[
+              { label: 'Нет', value: 'none' },
+              { label: 'Низкий', value: 'low' },
+              { label: 'Средний', value: 'medium' },
+              { label: 'Высокий', value: 'high' },
+            ]}
+          />
+        </div>
+
+        <div>
+          <Text size="sm" fw={500} mb={6}>
             Статус
           </Text>
           <SegmentedControl
@@ -154,6 +225,78 @@ export function TaskModal() {
             clearable
           />
         </Group>
+
+        {/* Подзадачи */}
+        <div>
+          <Group justify="space-between" mb={6}>
+            <Text size="sm" fw={500}>
+              Подзадачи
+            </Text>
+            {form.subtasks.length > 0 && (
+              <Text size="xs" c="dimmed">
+                {doneCount} из {form.subtasks.length}
+              </Text>
+            )}
+          </Group>
+
+          {form.subtasks.length > 0 && (
+            <Progress value={progress} size="sm" radius="xl" mb="xs" />
+          )}
+
+          <Stack gap={6}>
+            {form.subtasks.map((s) => (
+              <Group key={s.id} gap="xs" wrap="nowrap">
+                <Checkbox
+                  size="sm"
+                  checked={s.done}
+                  onChange={() => toggleSub(s.id)}
+                />
+                <Text
+                  size="sm"
+                  style={{
+                    flex: 1,
+                    textDecoration: s.done ? 'line-through' : undefined,
+                    color: s.done ? 'var(--app-text-dim)' : undefined,
+                  }}
+                >
+                  {s.title}
+                </Text>
+                <ActionIcon
+                  variant="subtle"
+                  color="gray"
+                  size="sm"
+                  aria-label="Удалить подзадачу"
+                  onClick={() => deleteSub(s.id)}
+                >
+                  <IconX size={14} />
+                </ActionIcon>
+              </Group>
+            ))}
+          </Stack>
+
+          <TextInput
+            mt="xs"
+            placeholder="Добавить подзадачу и Enter"
+            value={subInput}
+            onChange={(e) => setSubInput(e.currentTarget.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addSub();
+              }
+            }}
+            rightSection={
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                aria-label="Добавить подзадачу"
+                onClick={addSub}
+              >
+                <IconPlus size={16} />
+              </ActionIcon>
+            }
+          />
+        </div>
 
         <Group justify="space-between" mt="sm">
           {editingId ? (

@@ -17,6 +17,7 @@ import { useTasksStore, type Task } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
 import { contrastText } from '../../lib/palette';
+import { PriorityFlag } from '../../components/ui/PriorityFlag';
 import styles from './MonthCalendar.module.scss';
 
 const DATE_ROW_H = 34;
@@ -212,6 +213,7 @@ function TaskBar({
       >
         {done && <IconCheck size={12} stroke={3.5} />}
       </button>
+      <PriorityFlag priority={seg.task.priority} size={12} />
       <span className={styles.barTitle}>{seg.task.title}</span>
     </div>
   );

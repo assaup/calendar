@@ -23,11 +23,18 @@ import {
   IconPencil,
   IconTrash,
   IconCalendar,
+  IconListCheck,
 } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { PageShell } from '../../components/ui/PageShell';
 import { CategoryBadge } from '../../components/ui/CategoryBadge';
-import { useTasksStore, type Task, type TaskStatus } from '../../store/tasks';
+import { PriorityFlag } from '../../components/ui/PriorityFlag';
+import {
+  useTasksStore,
+  isOverdue,
+  type Task,
+  type TaskStatus,
+} from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
 import styles from './BoardPage.module.scss';
@@ -69,6 +76,7 @@ function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
           onPointerDown={(e) => e.stopPropagation()}
           aria-label="Готово"
         />
+        <PriorityFlag priority={task.priority} />
         <span
           className={styles.cardTitle}
           data-done={task.status === 'done' || undefined}
@@ -108,8 +116,17 @@ function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
 
       <div className={styles.cardMeta}>
         <CategoryBadge categoryId={task.categoryId} />
+        {(task.subtasks?.length ?? 0) > 0 && (
+          <span className={styles.subs}>
+            <IconListCheck size={13} />
+            {task.subtasks.filter((s) => s.done).length}/{task.subtasks.length}
+          </span>
+        )}
         {task.dueDate && (
-          <span className={styles.due}>
+          <span
+            className={styles.due}
+            data-overdue={isOverdue(task) || undefined}
+          >
             <IconCalendar size={13} />
             {dayjs(task.dueDate).format('D MMM')}
           </span>
