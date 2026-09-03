@@ -1,18 +1,33 @@
 @use './variables' as *;
 
 // ------------------------------------------------------------------
-// Цветовые токены под светлую и тёмную тему.
-// Светлая — розовая палитра (в духе референса), тёмная — нейтральная тёмная.
-// Mantine ставит на <html> data-mantine-color-scheme="light|dark".
+// Три темы приложения. Выбранная тема ставится на <html> как
+// data-app-theme="light|dark|pink" (см. ThemeSync). Структура у всех
+// одинаковая — отличаются только цвета.
 // ------------------------------------------------------------------
 
 :root {
   --font-display: 'Russo One', 'Segoe UI', sans-serif;
 }
 
-// --- Светлая тема (розовая) ---
+// --- Светлая (нейтральная, индиго) — по умолчанию ---
 :root,
-[data-mantine-color-scheme='light'] {
+[data-app-theme='light'] {
+  --app-bg: #f4f5fb;
+  --app-surface: #fff;
+  --app-surface-2: #eef1f9;
+  --app-border: #e5e8f2;
+  --app-text: #1a1d29;
+  --app-text-dim: #6a7288;
+  --app-accent: #4c6ef5;
+  --app-accent-soft: #eef2ff;
+  --app-frame: #dfe3ef;
+  --app-frame-shadow: 0 10px 40px rgb(60 70 120 / 18%);
+  --app-shadow: 0 6px 20px rgb(60 70 120 / 10%);
+}
+
+// --- Розовая ---
+[data-app-theme='pink'] {
   --app-bg: #fceaf2;
   --app-surface: #fff;
   --app-surface-2: #fbe0ec;
@@ -26,10 +41,9 @@
   --app-shadow: 0 6px 20px rgb(200 60 130 / 14%);
 }
 
-// Перекрашиваем брендовый цвет Mantine в светлой теме в розовый
-// (в тёмной остаётся индиго из theme.ts). html[...] — чтобы перебить
-// переменные, которые Mantine инжектит в рантайме.
-html[data-mantine-color-scheme='light'] {
+// Розовая тема перекрашивает брендовый цвет Mantine в розовый.
+// html[...] — чтобы перебить переменные, инжектируемые Mantine в рантайме.
+html[data-app-theme='pink'] {
   --mantine-color-brand-0: #fff0f6;
   --mantine-color-brand-1: #ffdeeb;
   --mantine-color-brand-2: #fcc2d7;
@@ -52,8 +66,8 @@ html[data-mantine-color-scheme='light'] {
   --mantine-primary-color-light-color: #c2255c;
 }
 
-// --- Тёмная тема (нейтральная, без розового) ---
-[data-mantine-color-scheme='dark'] {
+// --- Тёмная (нейтральная) ---
+[data-app-theme='dark'] {
   --app-bg: #17181c;
   --app-surface: #1f2126;
   --app-surface-2: #282b32;

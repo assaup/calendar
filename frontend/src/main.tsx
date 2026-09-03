@@ -25,10 +25,12 @@ import { theme } from './theme';
 import { queryClient } from './lib/queryClient';
 import { router } from './router';
 import { AuthGate } from './features/auth/AuthGate';
+import { ThemeSync } from './features/theme/ThemeSync';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MantineProvider theme={theme} defaultColorScheme="auto">
+    <MantineProvider theme={theme} defaultColorScheme="light">
+      <ThemeSync />
       <QueryClientProvider client={queryClient}>
         <DatesProvider settings={{ locale: 'ru', firstDayOfWeek: 1 }}>
           <ModalsProvider>

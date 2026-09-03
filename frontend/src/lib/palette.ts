@@ -6,6 +6,8 @@ export const PALETTE: { value: string; name: string }[] = [
   { value: '#9068fd', name: 'Фиолетовый' },
   { value: '#478bff', name: 'Синий' },
   { value: '#5ec974', name: 'Зелёный' },
+  { value: '#12992d', name: 'Травяной' },
+  { value: '#ff8604', name: 'Оранжевый' },
 ];
 
 export const PALETTE_VALUES = PALETTE.map((c) => c.value);
