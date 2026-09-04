@@ -3,23 +3,21 @@ from django.db import models
 
 class Task(models.Model):
     """Задача — единая сущность для доски, календаря и списка.
-    Одна запись отображается во всех трёх представлениях."""
+    Принадлежит рабочему пространству напрямую."""
 
     class Status(models.TextChoices):
         TODO = "todo", "К выполнению"
         IN_PROGRESS = "in_progress", "В работе"
         DONE = "done", "Готово"
 
-    project = models.ForeignKey(
-        "projects.Project",
+    class Priority(models.TextChoices):
+        LOW = "low", "Низкий"
+        MEDIUM = "medium", "Средний"
+        HIGH = "high", "Высокий"
+
+    workspace = models.ForeignKey(
+        "workspaces.Workspace",
         on_delete=models.CASCADE,
-        related_name="tasks",
-    )
-    section = models.ForeignKey(
-        "projects.Section",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
         related_name="tasks",
     )
     category = models.ForeignKey(
@@ -37,14 +35,19 @@ class Task(models.Model):
         choices=Status.choices,
         default=Status.TODO,
     )
+    priority = models.CharField(  # noqa: DJ001 — nullable enum: null = без приоритета
+        max_length=10,
+        choices=Priority.choices,
+        null=True,
+        blank=True,
+    )
 
     start_date = models.DateField(null=True, blank=True)
     due_date = models.DateField(null=True, blank=True)
 
-    # позиция карточки внутри колонки на доске
+    # позиция в общем списке (порядок внутри дня и колонок)
     position = models.PositiveIntegerField(default=0)
 
-    completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -54,6 +57,25 @@ class Task(models.Model):
             models.Index(fields=["due_date"]),
             models.Index(fields=["status"]),
         ]
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class SubTask(models.Model):
+    """Подзадача (пункт чек-листа) внутри задачи."""
+
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name="subtasks",
+    )
+    title = models.CharField(max_length=300)
+    done = models.BooleanField(default=False)
+    position = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "id"]
 
     def __str__(self) -> str:
         return self.title
