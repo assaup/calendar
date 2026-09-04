@@ -5,11 +5,14 @@ import { BoardPage } from './features/board/BoardPage';
 import { TodoPage } from './features/todo/TodoPage';
 import { NotesPage } from './features/notes/NotesPage';
 import { DashboardPage } from './features/dashboard/DashboardPage';
+import { NotFound } from './features/misc/NotFound';
+import { ErrorPage } from './features/misc/ErrorPage';
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <AppLayout />,
+    errorElement: <ErrorPage />,
     children: [
       { index: true, element: <Navigate to="/calendar" replace /> },
       { path: 'calendar', element: <CalendarPage /> },
@@ -17,6 +20,7 @@ export const router = createBrowserRouter([
       { path: 'todo', element: <TodoPage /> },
       { path: 'notes', element: <NotesPage /> },
       { path: 'dashboard', element: <DashboardPage /> },
+      { path: '*', element: <NotFound /> },
     ],
   },
 ]);

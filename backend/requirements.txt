@@ -3,3 +3,7 @@ djangorestframework==3.17.2
 django-cors-headers==4.9.0
 django-environ==0.14.0
 psycopg[binary]==3.3.5
+
+# Прод-сервер и статика
+gunicorn==23.0.0
+whitenoise==6.12.0
