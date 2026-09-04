@@ -1,65 +1,70 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { workspacesApi } from '../lib/resources';
 
 export interface Workspace {
   id: string;
   name: string;
-  color: string; // акцентный цвет пространства
+  color: string;
 }
 
 interface WorkspaceState {
   workspaces: Workspace[];
   activeId: string;
   setActive: (id: string) => void;
-  addWorkspace: (name: string, color: string) => string;
-  renameWorkspace: (id: string, name: string) => void;
-  deleteWorkspace: (id: string) => void;
+  hydrate: (items: Workspace[]) => void;
+  addWorkspace: (name: string, color: string) => Promise<string>;
+  renameWorkspace: (id: string, name: string) => Promise<void>;
+  deleteWorkspace: (id: string) => Promise<void>;
 }
-
-const uid = () =>
-  typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2);
-
-// Стартовые пространства.
-const seed: Workspace[] = [
-  { id: 'personal', name: 'Личное', color: '#2b8a3e' },
-  { id: 'work', name: 'Работа', color: '#364fc7' },
-];
 
 export const useWorkspaceStore = create<WorkspaceState>()(
   persist(
-    (set) => ({
-      workspaces: seed,
-      activeId: 'personal',
+    (set, get) => ({
+      workspaces: [],
+      activeId: '',
 
       setActive: (id) => set({ activeId: id }),
 
-      addWorkspace: (name, color) => {
-        const id = uid();
-        set((s) => ({
-          workspaces: [...s.workspaces, { id, name, color }],
-          activeId: id,
-        }));
-        return id;
+      hydrate: (items) =>
+        set((s) => {
+          const activeId =
+            items.some((w) => w.id === s.activeId) && s.activeId
+              ? s.activeId
+              : (items[0]?.id ?? '');
+          return { workspaces: items, activeId };
+        }),
+
+      addWorkspace: async (name, color) => {
+        const w = await workspacesApi.create(name, color);
+        set((s) => ({ workspaces: [...s.workspaces, w], activeId: w.id }));
+        return w.id;
       },
 
-      renameWorkspace: (id, name) =>
+      renameWorkspace: async (id, name) => {
         set((s) => ({
           workspaces: s.workspaces.map((w) =>
             w.id === id ? { ...w, name } : w,
           ),
-        })),
+        }));
+        await workspacesApi.update(id, { name });
+      },
 
-      deleteWorkspace: (id) =>
-        set((s) => {
-          // нельзя удалить последнее пространство
-          if (s.workspaces.length <= 1) return s;
-          const workspaces = s.workspaces.filter((w) => w.id !== id);
-          const activeId = s.activeId === id ? workspaces[0].id : s.activeId;
-          return { workspaces, activeId };
-        }),
+      deleteWorkspace: async (id) => {
+        const { workspaces, activeId } = get();
+        if (workspaces.length <= 1) return;
+        const next = workspaces.filter((w) => w.id !== id);
+        set({
+          workspaces: next,
+          activeId: activeId === id ? next[0].id : activeId,
+        });
+        await workspacesApi.remove(id);
+      },
     }),
-    { name: 'workspace-store' },
+    {
+      name: 'workspace-store',
+      // храним локально только выбранное пространство, данные — с сервера
+      partialize: (s) => ({ activeId: s.activeId }),
+    },
   ),
 );

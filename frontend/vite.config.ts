@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     // Проксируем запросы к API на Django — один origin, куки и CSRF работают проще
     proxy: {
-      '/api': 'http://localhost:8000',
+      '/api': 'http://127.0.0.1:8000',
     },
   },
 });

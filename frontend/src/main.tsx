@@ -25,6 +25,7 @@ import { theme } from './theme';
 import { queryClient } from './lib/queryClient';
 import { router } from './router';
 import { AuthGate } from './features/auth/AuthGate';
+import { HydrationGate } from './features/data/HydrationGate';
 import { ThemeSync } from './features/theme/ThemeSync';
 
 createRoot(document.getElementById('root')!).render(
@@ -36,7 +37,9 @@ createRoot(document.getElementById('root')!).render(
           <ModalsProvider>
             <Notifications position="top-right" />
             <AuthGate>
-              <RouterProvider router={router} />
+              <HydrationGate>
+                <RouterProvider router={router} />
+              </HydrationGate>
             </AuthGate>
           </ModalsProvider>
         </DatesProvider>

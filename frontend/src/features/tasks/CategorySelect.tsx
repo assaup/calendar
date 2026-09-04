@@ -34,10 +34,10 @@ export function CategorySelect({ value, onChange }: Props) {
 
   const data = categories.map((c) => ({ value: c.id, label: c.name }));
 
-  const create = () => {
+  const create = async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    const id = addCategory(trimmed, color);
+    const id = await addCategory(trimmed, color);
     onChange(id);
     setName('');
     setColor(PALETTE_VALUES[0]);

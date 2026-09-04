@@ -29,13 +29,13 @@ export function WorkspaceSwitcher() {
   const [name, setName] = useState('');
   const [color, setColor] = useState(PALETTE_VALUES[0]);
 
-  const create = () => {
+  const create = async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    addWorkspace(trimmed, color);
     setName('');
     setColor(PALETTE_VALUES[0]);
     setCreateOpen(false);
+    await addWorkspace(trimmed, color);
   };
 
   return (
@@ -79,7 +79,7 @@ export function WorkspaceSwitcher() {
                       aria-label={`Удалить пространство ${w.name}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteWorkspace(w.id);
+                        void deleteWorkspace(w.id);
                       }}
                     >
                       <IconTrash size={14} />

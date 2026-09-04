@@ -33,8 +33,8 @@ export function NotesPage() {
 
   const selected = visible.find((n) => n.id === selectedId) ?? null;
 
-  const createNote = () => {
-    const id = addNote(activeWorkspace);
+  const createNote = async () => {
+    const id = await addNote(activeWorkspace);
     setSelectedId(id);
   };
 

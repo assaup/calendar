@@ -1,7 +1,6 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { notesApi } from '../lib/resources';
 
-// Простые заметки (как в телефоне). Пока хранятся в браузере.
 export interface Note {
   id: string;
   workspaceId: string;
@@ -12,62 +11,56 @@ export interface Note {
 
 interface NotesState {
   notes: Note[];
-  addNote: (workspaceId: string) => string;
+  hydrate: (items: Note[]) => void;
+  addNote: (workspaceId: string) => Promise<string>;
   updateNote: (
     id: string,
     patch: Partial<Pick<Note, 'title' | 'body'>>,
   ) => void;
-  deleteNote: (id: string) => void;
+  deleteNote: (id: string) => Promise<void>;
 }
 
-const uid = () =>
-  typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2);
+// Дебаунс сохранения заметки на сервер (автосейв на каждую букву не шлём).
+const pending = new Map<string, ReturnType<typeof setTimeout>>();
+function scheduleSave(
+  id: string,
+  patch: Partial<Pick<Note, 'title' | 'body'>>,
+) {
+  const existing = pending.get(id);
+  if (existing) clearTimeout(existing);
+  pending.set(
+    id,
+    setTimeout(() => {
+      pending.delete(id);
+      void notesApi.update(id, patch);
+    }, 600),
+  );
+}
 
-const seed: Note[] = [
-  {
-    id: uid(),
-    workspaceId: 'personal',
-    title: 'Список покупок',
-    body: '<ul><li>Молоко</li><li>Хлеб</li><li>Кофе</li><li>Овсянка</li></ul>',
-    updatedAt: Date.now(),
+export const useNotesStore = create<NotesState>()((set, get) => ({
+  notes: [],
+
+  hydrate: (items) => set({ notes: items }),
+
+  addNote: async (workspaceId) => {
+    const note = await notesApi.create(workspaceId);
+    set((s) => ({ notes: [note, ...s.notes] }));
+    return note.id;
   },
-  {
-    id: uid(),
-    workspaceId: 'work',
-    title: 'Идеи для роликов',
-    body: '<p>Разбор трендов</p><p>Короткие форматы</p><p>Интро на 3 секунды</p>',
-    updatedAt: Date.now(),
+
+  updateNote: (id, patch) => {
+    set((s) => ({
+      notes: s.notes.map((n) =>
+        n.id === id ? { ...n, ...patch, updatedAt: Date.now() } : n,
+      ),
+    }));
+    // сохраняем весь текущий title+body (чтобы не потерять другое поле)
+    const note = get().notes.find((n) => n.id === id);
+    if (note) scheduleSave(id, { title: note.title, body: note.body });
   },
-];
 
-export const useNotesStore = create<NotesState>()(
-  persist(
-    (set) => ({
-      notes: seed,
-
-      addNote: (workspaceId) => {
-        const id = uid();
-        set((s) => ({
-          notes: [
-            { id, workspaceId, title: '', body: '', updatedAt: Date.now() },
-            ...s.notes,
-          ],
-        }));
-        return id;
-      },
-
-      updateNote: (id, patch) =>
-        set((s) => ({
-          notes: s.notes.map((n) =>
-            n.id === id ? { ...n, ...patch, updatedAt: Date.now() } : n,
-          ),
-        })),
-
-      deleteNote: (id) =>
-        set((s) => ({ notes: s.notes.filter((n) => n.id !== id) })),
-    }),
-    { name: 'notes-store' },
-  ),
-);
+  deleteNote: async (id) => {
+    set((s) => ({ notes: s.notes.filter((n) => n.id !== id) }));
+    await notesApi.remove(id);
+  },
+}));

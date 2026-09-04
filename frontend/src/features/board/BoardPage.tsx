@@ -310,9 +310,9 @@ export function BoardPage() {
     const title = quickText.trim();
     if (title && quickCol) {
       if (quickCol === 'nodate') {
-        addTask({ workspaceId: activeWorkspace, title, dueDate: null });
+        void addTask({ workspaceId: activeWorkspace, title, dueDate: null });
       } else {
-        addTask({
+        void addTask({
           workspaceId: activeWorkspace,
           title,
           status: quickCol,

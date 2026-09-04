@@ -114,12 +114,12 @@ export function TaskModal() {
 
   const canSave = form.title.trim().length > 0;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canSave) return;
     if (editingId) {
-      updateTask(editingId, form);
+      void updateTask(editingId, form);
     } else {
-      const id = addTask({
+      const id = await addTask({
         workspaceId: activeWorkspace,
         title: form.title,
         description: form.description,
@@ -129,7 +129,8 @@ export function TaskModal() {
         startDate: form.startDate,
         dueDate: form.dueDate,
       });
-      if (form.subtasks.length) updateTask(id, { subtasks: form.subtasks });
+      if (form.subtasks.length)
+        void updateTask(id, { subtasks: form.subtasks });
     }
     close();
   };

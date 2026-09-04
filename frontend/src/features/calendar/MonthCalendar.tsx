@@ -261,7 +261,7 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
   const commitQuickAdd = () => {
     const title = quickText.trim();
     if (title && quickDate) {
-      addTask({
+      void addTask({
         workspaceId: activeWorkspace,
         title,
         startDate: quickDate,
