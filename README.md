@@ -69,6 +69,20 @@ npm run dev
 
 Приложение: <http://localhost:5173> (запросы к `/api` проксируются на Django).
 
+## Локальный запуск «в одну кнопку»
+
+Весь проект (БД + бэкенд + фронт) одной командой, без `.env` и ручных шагов —
+удобно, если просто нужно пользоваться приложением локально:
+
+```bash
+docker compose -f docker-compose.local.yml up -d --build
+```
+
+Открыть: <http://localhost:8080>. Дальше в **Docker Desktop** проект `calendar`
+появится в списке — запуск/остановка кнопками ▶/⏹, пересобирать (`--build`)
+нужно только после изменений кода. `restart: unless-stopped` поднимает контейнеры
+автоматически при старте Docker Desktop.
+
 ## Полезные команды
 
 Frontend: `npm run typecheck` · `npm run lint` · `npm run build`

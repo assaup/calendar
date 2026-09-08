@@ -1,0 +1,51 @@
+# Локальный запуск всего проекта «в одну кнопку» (БД + бэкенд + фронт).
+# Никаких .env и настроек не нужно — все значения уже вшиты для локалки.
+#
+# Первый запуск (собрать образы):
+#   docker compose -f docker-compose.local.yml up -d --build
+# Дальше — просто кнопка ▶ у проекта в Docker Desktop (пересборка не нужна,
+# пока не менял код). Сайт: http://localhost:8080
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: planner
+      POSTGRES_PASSWORD: planner
+      POSTGRES_DB: planner
+    volumes:
+      - planner-localdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U planner"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DEBUG: "False"
+      SECRET_KEY: "local-dev-not-secret"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      DATABASE_URL: postgres://planner:planner@db:5432/planner
+      CORS_ALLOWED_ORIGINS: "http://localhost:8080,http://127.0.0.1:8080"
+      CSRF_TRUSTED_ORIGINS: "http://localhost:8080,http://127.0.0.1:8080"
+      # локально по http — secure-куки и редирект на https выключены
+      SECURE_SSL_REDIRECT: "False"
+      SESSION_COOKIE_SECURE: "False"
+      CSRF_COOKIE_SECURE: "False"
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  planner-localdata:
