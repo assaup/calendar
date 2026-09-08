@@ -149,8 +149,11 @@ if not DEBUG:
     # за обратным прокси (nginx/платформа) с завершением TLS
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=True)
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    # Secure-куки: по умолчанию True (для HTTPS). На временном HTTP-этапе
+    # выставь SESSION_COOKIE_SECURE=False и CSRF_COOKIE_SECURE=False в .env,
+    # иначе браузер не хранит куку по http и авторизация теряется (403).
+    SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", default=True)
+    CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", default=True)
     SESSION_COOKIE_SAMESITE = env("SESSION_COOKIE_SAMESITE", default="Lax")
     CSRF_COOKIE_SAMESITE = env("CSRF_COOKIE_SAMESITE", default="Lax")
     SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=31536000)
