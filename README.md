@@ -78,7 +78,7 @@ npm run dev
 docker compose -f docker-compose.local.yml up -d --build
 ```
 
-Открыть: <http://localhost:8080>. Дальше в **Docker Desktop** проект `calendar`
+Открыть: <http://localhost:3000>. Дальше в **Docker Desktop** проект `calendar`
 появится в списке — запуск/остановка кнопками ▶/⏹, пересобирать (`--build`)
 нужно только после изменений кода. `restart: unless-stopped` поднимает контейнеры
 автоматически при старте Docker Desktop.
