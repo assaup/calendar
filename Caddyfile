@@ -1,0 +1,7 @@
+# Caddy: автоматический HTTPS (Let's Encrypt) для домена.
+# Проксирует весь трафик на фронт-контейнер (nginx), который сам отдаёт
+# React и проксирует /api на бэкенд.
+daylogapp.ru, www.daylogapp.ru {
+    encode gzip
+    reverse_proxy frontend:80
+}

@@ -102,8 +102,30 @@ Backend: `ruff check apps config` · `black apps config` · `python manage.py te
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Фронт будет на `WEB_PORT` (по умолчанию 8080). TLS/домен — через внешний
-обратный прокси (или платформу). В проде включаются secure-куки и HSTS.
+Фронт будет на `WEB_PORT` (по умолчанию 8080). Сначала открываешь по
+`http://IP:8080` (secure-куки в `.env` выключены), а когда домен заведён —
+включаешь HTTPS (ниже).
+
+### HTTPS и домен (Caddy)
+
+Когда домен уже резолвится на сервер (проверь: `nslookup daylogapp.ru 8.8.8.8`
+должен вернуть IP сервера), поднимаем связку с Caddy — он сам берёт сертификат
+Let's Encrypt и держит его продлённым.
+
+1. В `Caddyfile` укажи свой домен (сейчас там `daylogapp.ru, www.daylogapp.ru`).
+2. В `.env` переключи на HTTPS-значения (см. блок PRODUCTION в
+   `backend/.env.example`): `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`,
+   `CSRF_TRUSTED_ORIGINS` — на `https://домен`, и `SECURE_SSL_REDIRECT`,
+   `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE` = `True`.
+3. Запусти с оверлеем Caddy:
+
+```bash
+docker compose -f docker-compose.prod.yml -f docker-compose.https.yml up -d --build
+```
+
+Открытые порты: 80 и 443 (Caddy). Он проксирует на фронт-nginx, тот отдаёт
+React и `/api` на бэкенд. `X-Forwarded-Proto` пробрасывается по цепочке
+Caddy → nginx → Django, поэтому редирект на https не зацикливается.
 
 ### Что стоит доделать перед публичным запуском
 - Управляемый PostgreSQL + бэкапы (вместо контейнера с данными).

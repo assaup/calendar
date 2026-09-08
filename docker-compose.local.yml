@@ -4,7 +4,7 @@
 # Первый запуск (собрать образы):
 #   docker compose -f docker-compose.local.yml up -d --build
 # Дальше — просто кнопка ▶ у проекта в Docker Desktop (пересборка не нужна,
-# пока не менял код). Сайт: http://localhost:8080
+# пока не менял код). Сайт: http://localhost:3000
 services:
   db:
     image: postgres:16-alpine

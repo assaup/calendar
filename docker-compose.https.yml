@@ -1,0 +1,26 @@
+# Оверлей поверх docker-compose.prod.yml: добавляет Caddy с авто-HTTPS.
+# Включать, КОГДА домен уже резолвится на этот сервер (иначе Let's Encrypt
+# не выдаст сертификат).
+#
+# Запуск (на VPS, после готового DNS):
+#   docker compose -f docker-compose.prod.yml -f docker-compose.https.yml up -d
+#
+# Caddy слушает 80/443 и проксирует на фронт. Порт 8080 фронта можно оставить
+# или убрать (задав WEB_PORT на closed-порт) — снаружи ходим по https://домен.
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:
