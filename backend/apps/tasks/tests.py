@@ -14,7 +14,9 @@ class TaskApiTests(APITestCase):
 
     def test_defaults_seeded(self):
         self.assertEqual(Workspace.objects.filter(owner=self.user).count(), 2)
-        self.assertEqual(self.user.categories.count(), 4)
+        # у каждой доски свой базовый набор категорий
+        for ws in Workspace.objects.filter(owner=self.user):
+            self.assertEqual(ws.categories.count(), 4)
 
     def test_create_task_with_subtasks(self):
         self.client.force_authenticate(self.user)
@@ -47,6 +49,25 @@ class TaskApiTests(APITestCase):
         self.client.force_authenticate(self.user)
         resp = self.client.get("/api/tasks/")
         self.assertEqual(len(resp.data), 0)
+
+    def test_category_scoped_to_workspace(self):
+        self.client.force_authenticate(self.user)
+        # категория создаётся внутри конкретной доски
+        resp = self.client.post(
+            "/api/categories/",
+            {"workspace": self.ws.id, "name": "Кровля", "color": "#478bff"},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 201)
+        cat_id = resp.data["id"]
+        # задача в ДРУГОЙ доске не может взять эту категорию
+        other_ws = Workspace.objects.filter(owner=self.user).exclude(id=self.ws.id).first()
+        resp = self.client.post(
+            "/api/tasks/",
+            {"workspace": other_ws.id, "title": "T", "category": cat_id},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 400)
 
     def test_requires_auth(self):
         self.assertEqual(self.client.get("/api/tasks/").status_code, 403)

@@ -41,9 +41,17 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def validate_category(self, category):
         request = self.context.get("request")
-        if category and request and category.owner_id != request.user.id:
+        if category and request and category.workspace.owner_id != request.user.id:
             raise serializers.ValidationError("Чужая категория.")
         return category
+
+    def validate(self, attrs):
+        # категория должна принадлежать тому же пространству, что и задача
+        category = attrs.get("category")
+        workspace = attrs.get("workspace") or getattr(self.instance, "workspace", None)
+        if category and workspace and category.workspace_id != workspace.id:
+            raise serializers.ValidationError({"category": "Категория из другого пространства."})
+        return attrs
 
     def _sync_subtasks(self, task: Task, subs):
         task.subtasks.all().delete()

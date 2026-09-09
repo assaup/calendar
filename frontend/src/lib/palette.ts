@@ -1,13 +1,21 @@
-// Палитра цветов для категорий и пространств.
+// Палитра цветов для категорий и пространств (по кругу оттенков).
 export const PALETTE: { value: string; name: string }[] = [
   { value: '#bb1816', name: 'Красный' },
-  { value: '#eb8f7f', name: 'Коралловый' },
-  { value: '#f57aba', name: 'Розовый' },
-  { value: '#9068fd', name: 'Фиолетовый' },
-  { value: '#478bff', name: 'Синий' },
-  { value: '#5ec974', name: 'Зелёный' },
-  { value: '#12992d', name: 'Травяной' },
+  { value: '#e8590c', name: 'Терракотовый' },
   { value: '#ff8604', name: 'Оранжевый' },
+  { value: '#f59f00', name: 'Янтарный' },
+  { value: '#12992d', name: 'Травяной' },
+  { value: '#0ca678', name: 'Изумрудный' },
+  { value: '#5ec974', name: 'Зелёный' },
+  { value: '#1098ad', name: 'Бирюзовый' },
+  { value: '#478bff', name: 'Синий' },
+  { value: '#4263eb', name: 'Индиго' },
+  { value: '#9068fd', name: 'Фиолетовый' },
+  { value: '#ae3ec9', name: 'Сиреневый' },
+  { value: '#f57aba', name: 'Розовый' },
+  { value: '#d6336c', name: 'Малиновый' },
+  { value: '#eb8f7f', name: 'Коралловый' },
+  { value: '#868e96', name: 'Серый' },
 ];
 
 export const PALETTE_VALUES = PALETTE.map((c) => c.value);

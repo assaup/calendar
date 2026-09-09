@@ -91,7 +91,9 @@ export function TodoPage() {
 
   const categoryOptions = [
     { value: 'none', label: 'Без категории' },
-    ...categories.map((c) => ({ value: c.id, label: c.name })),
+    ...categories
+      .filter((c) => c.workspaceId === activeWorkspace)
+      .map((c) => ({ value: c.id, label: c.name })),
   ];
 
   return (

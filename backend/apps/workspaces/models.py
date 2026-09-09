@@ -24,11 +24,11 @@ class Workspace(models.Model):
 
 
 class Category(models.Model):
-    """Категория/метка задачи (цвет + имя). Общая на все пространства
-    пользователя (как в интерфейсе)."""
+    """Категория/метка задачи (цвет + имя). Своя на каждой доске
+    (рабочем пространстве) — у «стройки» и «отпуска» наборы независимы."""
 
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+    workspace = models.ForeignKey(
+        Workspace,
         on_delete=models.CASCADE,
         related_name="categories",
     )

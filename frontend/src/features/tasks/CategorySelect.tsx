@@ -13,8 +13,9 @@ import {
   ScrollArea,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { IconSettings, IconTrash } from '@tabler/icons-react';
+import { IconSettings, IconTrash, IconPencil } from '@tabler/icons-react';
 import { useTasksStore, type Category } from '../../store/tasks';
+import { useWorkspaceStore } from '../../store/workspace';
 import { ColorSwatchPicker } from '../../components/ui/ColorSwatchPicker';
 import { PALETTE_VALUES } from '../../lib/palette';
 
@@ -24,24 +25,46 @@ interface Props {
 }
 
 export function CategorySelect({ value, onChange }: Props) {
-  const categories = useTasksStore((s) => s.categories);
+  const allCategories = useTasksStore((s) => s.categories);
   const addCategory = useTasksStore((s) => s.addCategory);
+  const updateCategory = useTasksStore((s) => s.updateCategory);
   const deleteCategory = useTasksStore((s) => s.deleteCategory);
+  const activeWorkspaceId = useWorkspaceStore((s) => s.activeId);
+
+  // категории принадлежат конкретной доске
+  const categories = allCategories.filter(
+    (c) => c.workspaceId === activeWorkspaceId,
+  );
 
   const [manageOpen, setManageOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [color, setColor] = useState(PALETTE_VALUES[0]);
 
   const data = categories.map((c) => ({ value: c.id, label: c.name }));
 
-  const create = async () => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const id = await addCategory(trimmed, color);
-    onChange(id);
+  const resetForm = () => {
+    setEditingId(null);
     setName('');
     setColor(PALETTE_VALUES[0]);
-    setManageOpen(false);
+  };
+
+  const startEdit = (cat: Category) => {
+    setEditingId(cat.id);
+    setName(cat.name);
+    setColor(cat.color);
+  };
+
+  const submit = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (editingId) {
+      await updateCategory(editingId, { name: trimmed, color });
+    } else {
+      const id = await addCategory(trimmed, color, activeWorkspaceId);
+      onChange(id);
+    }
+    resetForm();
   };
 
   const confirmDelete = (cat: Category) =>
@@ -57,8 +80,16 @@ export function CategorySelect({ value, onChange }: Props) {
       ),
       labels: { confirm: 'Удалить', cancel: 'Отмена' },
       confirmProps: { color: 'red' },
-      onConfirm: () => deleteCategory(cat.id),
+      onConfirm: () => {
+        if (editingId === cat.id) resetForm();
+        deleteCategory(cat.id);
+      },
     });
+
+  const closeManage = () => {
+    setManageOpen(false);
+    resetForm();
+  };
 
   return (
     <>
@@ -104,8 +135,8 @@ export function CategorySelect({ value, onChange }: Props) {
 
       <Modal
         opened={manageOpen}
-        onClose={() => setManageOpen(false)}
-        title="Категории"
+        onClose={closeManage}
+        title="Категории этой доски"
         centered
         zIndex={350}
         size="sm"
@@ -114,9 +145,9 @@ export function CategorySelect({ value, onChange }: Props) {
           {categories.length > 0 && (
             <Stack gap={6}>
               <Text size="xs" c="dimmed" fw={600}>
-                Твои категории
+                Категории
               </Text>
-              <ScrollArea.Autosize mah={220}>
+              <ScrollArea.Autosize mah={240}>
                 <Stack gap={4}>
                   {categories.map((c) => (
                     <Group key={c.id} justify="space-between" wrap="nowrap">
@@ -134,15 +165,26 @@ export function CategorySelect({ value, onChange }: Props) {
                           {c.name}
                         </Text>
                       </Group>
-                      <ActionIcon
-                        variant="subtle"
-                        color="red"
-                        size="sm"
-                        aria-label={`Удалить категорию ${c.name}`}
-                        onClick={() => confirmDelete(c)}
-                      >
-                        <IconTrash size={15} />
-                      </ActionIcon>
+                      <Group gap={2} wrap="nowrap">
+                        <ActionIcon
+                          variant="subtle"
+                          color="gray"
+                          size="sm"
+                          aria-label={`Переименовать категорию ${c.name}`}
+                          onClick={() => startEdit(c)}
+                        >
+                          <IconPencil size={15} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          size="sm"
+                          aria-label={`Удалить категорию ${c.name}`}
+                          onClick={() => confirmDelete(c)}
+                        >
+                          <IconTrash size={15} />
+                        </ActionIcon>
+                      </Group>
                     </Group>
                   ))}
                 </Stack>
@@ -150,20 +192,30 @@ export function CategorySelect({ value, onChange }: Props) {
             </Stack>
           )}
 
-          <Divider label="Новая категория" labelPosition="left" />
+          <Divider
+            label={editingId ? 'Изменить категорию' : 'Новая категория'}
+            labelPosition="left"
+          />
 
           <TextInput
             label="Название"
-            placeholder="Например, Учёба"
+            placeholder="Например, Фундамент"
             value={name}
             onChange={(e) => setName(e.currentTarget.value)}
-            onKeyDown={(e) => e.key === 'Enter' && create()}
+            onKeyDown={(e) => e.key === 'Enter' && submit()}
             data-autofocus
           />
           <ColorSwatchPicker label="Цвет" value={color} onChange={setColor} />
-          <Button onClick={create} disabled={!name.trim()}>
-            Добавить категорию
-          </Button>
+          <Group gap="xs">
+            <Button onClick={submit} disabled={!name.trim()} style={{ flex: 1 }}>
+              {editingId ? 'Сохранить' : 'Добавить категорию'}
+            </Button>
+            {editingId && (
+              <Button variant="default" onClick={resetForm}>
+                Отмена
+              </Button>
+            )}
+          </Group>
         </Stack>
       </Modal>
     </>

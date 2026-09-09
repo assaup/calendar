@@ -7,7 +7,7 @@ import type {
   TaskStatus,
   Priority,
 } from '../store/tasks';
-import type { Note } from '../store/notes';
+import type { Note, NoteFolder } from '../store/notes';
 
 // ------------------------------------------------------------------
 // Слой запросов к API + маппинг между серверной (snake_case, числовые id,
@@ -53,11 +53,13 @@ export const workspacesApi = {
 // ---------- Categories ----------
 interface SrvCategory {
   id: number;
+  workspace: number;
   name: string;
   color: string;
 }
 const mapCategory = (c: SrvCategory): Category => ({
   id: sid(c.id),
+  workspaceId: sid(c.workspace),
   name: c.name,
   color: c.color,
 });
@@ -67,10 +69,15 @@ export const categoriesApi = {
     const { data } = await api.get<SrvCategory[]>('/categories/');
     return data.map(mapCategory);
   },
-  async create(name: string, color: string): Promise<Category> {
+  async create(
+    name: string,
+    color: string,
+    workspaceId: string,
+  ): Promise<Category> {
     const { data } = await api.post<SrvCategory>('/categories/', {
       name,
       color,
+      workspace: Number(workspaceId),
     });
     return mapCategory(data);
   },
@@ -165,37 +172,93 @@ export const tasksApi = {
   },
 };
 
+// ---------- Note folders ----------
+interface SrvFolder {
+  id: number;
+  workspace: number;
+  name: string;
+  position: number;
+}
+const mapFolder = (f: SrvFolder): NoteFolder => ({
+  id: sid(f.id),
+  workspaceId: sid(f.workspace),
+  name: f.name,
+});
+
+export const foldersApi = {
+  async list(): Promise<NoteFolder[]> {
+    const { data } = await api.get<SrvFolder[]>('/folders/');
+    return data.map(mapFolder);
+  },
+  async create(workspaceId: string, name: string): Promise<NoteFolder> {
+    const { data } = await api.post<SrvFolder>('/folders/', {
+      workspace: Number(workspaceId),
+      name,
+    });
+    return mapFolder(data);
+  },
+  async update(id: string, patch: Partial<{ name: string }>) {
+    const { data } = await api.patch<SrvFolder>(`/folders/${id}/`, patch);
+    return mapFolder(data);
+  },
+  async remove(id: string): Promise<void> {
+    await api.delete(`/folders/${id}/`);
+  },
+};
+
 // ---------- Notes ----------
 interface SrvNote {
   id: number;
   workspace: number;
+  folder: number | null;
   title: string;
   body: string;
+  is_pinned: boolean;
   updated_at: string;
 }
 const mapNote = (n: SrvNote): Note => ({
   id: sid(n.id),
   workspaceId: sid(n.workspace),
+  folderId: n.folder === null ? null : sid(n.folder),
   title: n.title,
   body: n.body,
+  isPinned: n.is_pinned,
   updatedAt: Date.parse(n.updated_at) || Date.now(),
 });
+
+type NotePatch = Partial<{
+  title: string;
+  body: string;
+  folderId: string | null;
+  isPinned: boolean;
+}>;
+
+function noteToBody(patch: NotePatch): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+  if (patch.title !== undefined) body.title = patch.title;
+  if (patch.body !== undefined) body.body = patch.body;
+  if (patch.folderId !== undefined)
+    body.folder = patch.folderId === null ? null : Number(patch.folderId);
+  if (patch.isPinned !== undefined) body.is_pinned = patch.isPinned;
+  return body;
+}
 
 export const notesApi = {
   async list(): Promise<Note[]> {
     const { data } = await api.get<SrvNote[]>('/notes/');
     return data.map(mapNote);
   },
-  async create(workspaceId: string): Promise<Note> {
+  async create(workspaceId: string, folderId: string | null): Promise<Note> {
     const { data } = await api.post<SrvNote>('/notes/', {
       workspace: Number(workspaceId),
+      folder: folderId === null ? null : Number(folderId),
       title: '',
       body: '',
     });
     return mapNote(data);
   },
-  async update(id: string, patch: Partial<{ title: string; body: string }>) {
-    const { data } = await api.patch<SrvNote>(`/notes/${id}/`, patch);
+  async update(id: string, patch: NotePatch) {
+    const { data } = await api.patch<SrvNote>(`/notes/${id}/`, noteToBody(patch));
     return mapNote(data);
   },
   async remove(id: string): Promise<void> {

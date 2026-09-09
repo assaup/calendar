@@ -13,4 +13,10 @@ class WorkspaceSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ["id", "name", "color"]
+        fields = ["id", "workspace", "name", "color"]
+
+    def validate_workspace(self, workspace: Workspace) -> Workspace:
+        request = self.context.get("request")
+        if request and workspace.owner_id != request.user.id:
+            raise serializers.ValidationError("Чужое пространство.")
+        return workspace

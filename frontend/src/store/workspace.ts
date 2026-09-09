@@ -14,7 +14,10 @@ interface WorkspaceState {
   setActive: (id: string) => void;
   hydrate: (items: Workspace[]) => void;
   addWorkspace: (name: string, color: string) => Promise<string>;
-  renameWorkspace: (id: string, name: string) => Promise<void>;
+  updateWorkspace: (
+    id: string,
+    patch: Partial<Pick<Workspace, 'name' | 'color'>>,
+  ) => Promise<void>;
   deleteWorkspace: (id: string) => Promise<void>;
 }
 
@@ -41,13 +44,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         return w.id;
       },
 
-      renameWorkspace: async (id, name) => {
+      updateWorkspace: async (id, patch) => {
         set((s) => ({
           workspaces: s.workspaces.map((w) =>
-            w.id === id ? { ...w, name } : w,
+            w.id === id ? { ...w, ...patch } : w,
           ),
         }));
-        await workspacesApi.update(id, { name });
+        await workspacesApi.update(id, patch);
       },
 
       deleteWorkspace: async (id) => {

@@ -5,6 +5,7 @@ import {
   categoriesApi,
   tasksApi,
   notesApi,
+  foldersApi,
 } from '../../lib/resources';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTasksStore } from '../../store/tasks';
@@ -23,16 +24,17 @@ export function HydrationGate({ children }: { children: ReactNode }) {
     setState('loading');
     (async () => {
       try {
-        const [ws, cats, tasks, notes] = await Promise.all([
+        const [ws, cats, tasks, notes, folders] = await Promise.all([
           workspacesApi.list(),
           categoriesApi.list(),
           tasksApi.list(),
           notesApi.list(),
+          foldersApi.list(),
         ]);
         if (!alive) return;
         hydrateWs(ws);
         hydrateTasks({ categories: cats, tasks });
-        hydrateNotes(notes);
+        hydrateNotes({ notes, folders });
         setState('ready');
       } catch {
         if (alive) setState('error');

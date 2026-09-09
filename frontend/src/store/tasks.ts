@@ -21,6 +21,7 @@ export const PRIORITY_META: Record<
 
 export interface Category {
   id: string;
+  workspaceId: string;
   name: string;
   color: string;
 }
@@ -65,7 +66,11 @@ interface TasksState {
   deleteTask: (id: string) => Promise<void>;
   toggleDone: (id: string) => Promise<void>;
   moveTask: (activeId: string, overId: string) => void;
-  addCategory: (name: string, color: string) => Promise<string>;
+  addCategory: (
+    name: string,
+    color: string,
+    workspaceId: string,
+  ) => Promise<string>;
   updateCategory: (
     id: string,
     patch: Partial<Omit<Category, 'id'>>,
@@ -146,8 +151,8 @@ export const useTasksStore = create<TasksState>()((set, get) => ({
     }
   },
 
-  addCategory: async (name, color) => {
-    const cat = await categoriesApi.create(name, color);
+  addCategory: async (name, color, workspaceId) => {
+    const cat = await categoriesApi.create(name, color, workspaceId);
     set((s) => ({ categories: [...s.categories, cat] }));
     return cat.id;
   },

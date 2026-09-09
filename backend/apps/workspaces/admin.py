@@ -11,5 +11,5 @@ class WorkspaceAdmin(admin.ModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("name", "owner", "color")
-    list_filter = ("owner",)
+    list_display = ("name", "workspace", "color")
+    list_filter = ("workspace",)
