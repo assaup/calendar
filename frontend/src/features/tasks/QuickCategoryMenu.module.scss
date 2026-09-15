@@ -1,0 +1,74 @@
+@use '../../styles/variables' as *;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+}
+
+.menu {
+  position: fixed;
+  z-index: 301;
+  width: 240px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: $radius-md;
+  box-shadow: var(--app-shadow);
+}
+
+.title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--app-text-dim);
+  padding: 4px 8px 6px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--app-text);
+  border-radius: $radius-sm;
+  padding: 7px 8px;
+  cursor: pointer;
+  font-size: 14px;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--app-surface-2);
+    outline: none;
+  }
+
+  &[data-current] {
+    background: var(--app-accent-soft);
+    color: var(--app-accent);
+    font-weight: 600;
+  }
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty {
+  padding: 8px;
+  font-size: 13px;
+  color: var(--app-text-dim);
+}

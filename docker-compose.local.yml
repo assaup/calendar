@@ -5,6 +5,11 @@
 #   docker compose -f docker-compose.local.yml up -d --build
 # Дальше — просто кнопка ▶ у проекта в Docker Desktop (пересборка не нужна,
 # пока не менял код). Сайт: http://localhost:3000
+# Имя проекта закреплено: твои локальные данные лежат в томе
+# calendar_planner-localdata, и менять его нельзя, иначе приложение
+# запустится с пустой базой.
+name: calendar
+
 services:
   db:
     image: postgres:16-alpine

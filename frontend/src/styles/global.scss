@@ -21,6 +21,9 @@
   --app-text-dim: #6a7288;
   --app-accent: #4c6ef5;
   --app-accent-soft: #eef2ff;
+  // карточка задачи без категории — в цвете темы, а не серая
+  --app-card: #eaeefc;
+  --app-card-border: #c4d0f8;
   --app-frame: #dfe3ef;
   --app-frame-shadow: 0 10px 40px rgb(60 70 120 / 18%);
   --app-shadow: 0 6px 20px rgb(60 70 120 / 10%);
@@ -36,6 +39,8 @@
   --app-text-dim: #a06b84;
   --app-accent: #e5449a;
   --app-accent-soft: #fce1ef;
+  --app-card: #fde5f1;
+  --app-card-border: #f5bad8;
   --app-frame: #ec57a2;
   --app-frame-shadow: 0 10px 40px rgb(180 40 110 / 25%);
   --app-shadow: 0 6px 20px rgb(200 60 130 / 14%);
@@ -76,6 +81,9 @@ html[data-app-theme='pink'] {
   --app-text-dim: #9aa0aa;
   --app-accent: #91a7ff;
   --app-accent-soft: #24273a;
+  // в тёмной теме подмешивание акцента почти не видно — задаём явно
+  --app-card: #252b3e;
+  --app-card-border: #3d4767;
   --app-frame: #0e0f13;
   --app-frame-shadow: 0 10px 40px rgb(0 0 0 / 55%);
   --app-shadow: 0 4px 14px rgb(0 0 0 / 40%);

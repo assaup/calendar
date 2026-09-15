@@ -13,6 +13,18 @@
   border-right: 1px solid var(--app-border);
   height: 100%;
   overflow-y: auto;
+  transition: width 0.2s ease;
+}
+
+// Свёрнутое меню: страница разворачивается во всю ширину
+.shell[data-collapsed='true'] .sidebar {
+  width: 0;
+  border-right: none;
+  overflow: hidden;
+}
+
+.collapseBtn {
+  flex-shrink: 0;
 }
 
 .main {
@@ -67,6 +79,17 @@
     transform: translateX(-100%);
     transition: transform 0.22s ease;
     box-shadow: var(--app-shadow);
+  }
+
+  // на телефоне меню и так выезжает поверх — сворачивать нечего
+  .shell[data-collapsed='true'] .sidebar {
+    width: $sidebar-width;
+    border-right: 1px solid var(--app-border);
+    overflow-y: auto;
+  }
+
+  .collapseBtn {
+    display: none;
   }
 
   .sidebar[data-open='true'] {

@@ -25,6 +25,7 @@ import { PriorityBadge } from '../../components/ui/PriorityBadge';
 import { useTasksStore, isOverdue, PRIORITY_META } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
+import { cardFocus } from '../tasks/cardFocus';
 import styles from './TodoPage.module.scss';
 
 type StatusFilter = 'all' | 'active' | 'done';
@@ -182,7 +183,11 @@ export function TodoPage() {
           <div className={styles.resultCount}>
             Показано: {visible.length} из {inWorkspace.length}
           </div>
-          <div className={styles.tableWrap}>
+          <div
+            className={styles.tableWrap}
+            onMouseEnter={() => cardFocus.enterTarget({})}
+            onMouseLeave={cardFocus.leaveTarget}
+          >
             <div className={styles.table}>
               <div className={styles.tableHead}>
                 <span />
@@ -198,7 +203,12 @@ export function TodoPage() {
                 const subsDone = subs.filter((s) => s.done).length;
                 const overdue = isOverdue(task);
                 return (
-                  <div key={task.id} className={styles.tableRow}>
+                  <div
+                    key={task.id}
+                    className={styles.tableRow}
+                    onMouseEnter={() => cardFocus.enterTask(task.id)}
+                    onMouseLeave={() => cardFocus.leaveTask(task.id)}
+                  >
                     <Checkbox
                       size="sm"
                       checked={task.status === 'done'}

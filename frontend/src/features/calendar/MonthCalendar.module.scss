@@ -136,6 +136,13 @@
     filter 0.1s ease,
     box-shadow 0.1s ease;
 
+  // задача без категории — в цвете темы, а не серая
+  &[data-plain] {
+    background: var(--app-card);
+    color: var(--app-text);
+    border: 1px solid var(--app-card-border);
+  }
+
   &:hover {
     filter: brightness(1.08);
     transform: translateY(-1px);

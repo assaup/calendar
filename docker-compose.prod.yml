@@ -1,6 +1,11 @@
 # Прод-стек целиком: Postgres + Django (gunicorn) + фронт (nginx).
 # Запуск: docker compose -f docker-compose.prod.yml up -d --build
 # Переменные задай в .env рядом с этим файлом (см. backend/.env.example).
+#
+# Имя проекта закреплено ровно таким, какое сейчас на сервере: боевые
+# данные лежат в томе calendar_pgdata, переименование его потеряет.
+name: calendar
+
 services:
   db:
     image: postgres:16-alpine

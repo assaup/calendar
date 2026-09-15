@@ -1,7 +1,11 @@
+# Отдельный проект Docker, чтобы БД для разработки НЕ пересоздавала
+# контейнер локального стека (docker-compose.local.yml) — раньше оба
+# файла попадали в проект «calendar» и перетирали друг другу службу db.
+name: planner-dev
+
 services:
   db:
     image: postgres:16-alpine
-    container_name: planner-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: planner
@@ -20,3 +24,6 @@ services:
 
 volumes:
   planner-pgdata:
+    # имя тома закреплено, чтобы данные разработки не потерялись
+    # при смене имени проекта
+    name: calendar_planner-pgdata

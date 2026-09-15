@@ -10,6 +10,7 @@ import { MonthCalendar } from './MonthCalendar';
 import { useTaskEditor } from '../tasks/taskEditor';
 import { useTasksStore } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
+import { useUiStore } from '../../store/ui';
 import styles from './CalendarPage.module.scss';
 
 function plural(n: number): string {
@@ -26,6 +27,8 @@ export function CalendarPage() {
   const openNew = useTaskEditor((s) => s.openNew);
   const tasks = useTasksStore((s) => s.tasks);
   const activeWorkspace = useWorkspaceStore((s) => s.activeId);
+  // при свёрнутом меню календарь растягивается во всю ширину
+  const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
 
   const title = month.format('MMMM YYYY');
   const capitalized = title.charAt(0).toUpperCase() + title.slice(1);
@@ -39,7 +42,7 @@ export function CalendarPage() {
   }).length;
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-wide={sidebarCollapsed || undefined}>
       <div className={styles.toolbar}>
         <div className={styles.left}>
           <Title order={2} className={styles.month}>

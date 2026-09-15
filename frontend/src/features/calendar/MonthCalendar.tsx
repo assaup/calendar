@@ -17,6 +17,7 @@ import { useTasksStore, PRIORITY_META, type Task } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
 import { contrastText } from '../../lib/palette';
+import { cardFocus } from '../tasks/cardFocus';
 import styles from './MonthCalendar.module.scss';
 
 const DATE_ROW_H = 34;
@@ -136,6 +137,8 @@ function DayCell({
       className={styles.dayCell}
       data-outside={outside || undefined}
       data-over={isOver || undefined}
+      onMouseEnter={() => cardFocus.enterTarget({ startDate: iso, dueDate: iso })}
+      onMouseLeave={cardFocus.leaveTarget}
       onClick={() => onQuickAdd(iso)}
       aria-label="Добавить задачу"
     >
@@ -152,7 +155,7 @@ function TaskBar({
   onOpen,
 }: {
   seg: Segment;
-  color: string;
+  color: string | null;
   onOpen: (id: string) => void;
 }) {
   const toggleDone = useTasksStore((s) => s.toggleDone);
@@ -181,17 +184,20 @@ function TaskBar({
       data-dragging={drag.isDragging || undefined}
       data-over={drop.isOver && !drag.isDragging ? 'true' : undefined}
       data-prio={seg.task.priority || undefined}
+      data-plain={!color || undefined}
       style={{
         top: DATE_ROW_H + seg.lane * (BAR_H + BAR_GAP),
         left: `calc(${(seg.colStart / 7) * 100}% + 4px)`,
         width: `calc(${(span / 7) * 100}% - 8px)`,
         height: BAR_H,
-        background: color,
-        color: contrastText(color),
+        // без категории цвет задаёт тема через CSS
+        ...(color ? { background: color, color: contrastText(color) } : {}),
         ...(seg.task.priority
           ? { ['--prio']: PRIORITY_META[seg.task.priority].color }
           : {}),
       }}
+      onMouseEnter={() => cardFocus.enterTask(seg.task.id)}
+      onMouseLeave={() => cardFocus.leaveTask(seg.task.id)}
       onClick={() => onOpen(seg.task.id)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
@@ -248,8 +254,10 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
     [month, visibleTasks],
   );
 
-  const catColor = (id: string | null) =>
-    categories.find((c) => c.id === id)?.color ?? '#868e96';
+  // null = категории нет: цвет возьмётся из темы (см. .bar[data-plain]),
+  // а не серый хардкодом
+  const catColor = (id: string | null): string | null =>
+    categories.find((c) => c.id === id)?.color ?? null;
 
   const today = dayjs().format('YYYY-MM-DD');
 

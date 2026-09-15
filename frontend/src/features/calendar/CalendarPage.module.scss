@@ -3,6 +3,11 @@
 .page {
   max-width: 1200px;
   margin: 0 auto;
+
+  // свёрнутое боковое меню — календарь занимает всю ширину экрана
+  &[data-wide] {
+    max-width: none;
+  }
 }
 
 .toolbar {

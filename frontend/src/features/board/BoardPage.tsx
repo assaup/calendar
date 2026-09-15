@@ -39,6 +39,7 @@ import {
 } from '../../store/tasks';
 import { useWorkspaceStore } from '../../store/workspace';
 import { useTaskEditor } from '../tasks/taskEditor';
+import { cardFocus, type PastePatch } from '../tasks/cardFocus';
 import styles from './BoardPage.module.scss';
 
 type ColumnId = TaskStatus | 'nodate';
@@ -168,6 +169,8 @@ function SortableCard({ task }: { task: Task }) {
       className={styles.cardWrap}
       data-dragging={isDragging || undefined}
       style={{ transform: CSS.Transform.toString(transform), transition }}
+      onMouseEnter={() => cardFocus.enterTask(task.id)}
+      onMouseLeave={() => cardFocus.leaveTask(task.id)}
       onClick={() => openEdit(task.id)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {
@@ -188,6 +191,7 @@ function Column({
   title,
   hint,
   tasks,
+  pastePatch,
   onCollapse,
   quickOpen,
   onQuickOpen,
@@ -200,6 +204,7 @@ function Column({
   title: string;
   hint?: string;
   tasks: Task[];
+  pastePatch: PastePatch;
   onCollapse?: () => void;
   quickOpen: boolean;
   onQuickOpen: () => void;
@@ -216,6 +221,8 @@ function Column({
       className={styles.column}
       data-over={isOver || undefined}
       data-nodate={id === 'nodate' || undefined}
+      onMouseEnter={() => cardFocus.enterTarget(pastePatch)}
+      onMouseLeave={cardFocus.leaveTarget}
     >
       <div className={styles.columnHead}>
         <div>
@@ -428,6 +435,11 @@ export function BoardPage() {
               id={col.id}
               title={col.title}
               tasks={tasksOf(col.id)}
+              pastePatch={(src) => ({
+                status: col.id,
+                // дату оставляем, если она и так в этом месяце
+                dueDate: inMonth(src) ? src.dueDate : monthDefaultDate,
+              })}
               {...quickProps(col.id)}
             />
           ))}
@@ -449,6 +461,7 @@ export function BoardPage() {
               title="Без срока"
               hint="Бэклог — без даты"
               tasks={noDateTasks}
+              pastePatch={{ dueDate: null }}
               onCollapse={() => setNoDateCollapsed(true)}
               {...quickProps('nodate')}
             />

@@ -146,8 +146,10 @@
 }
 
 .card {
-  background: var(--app-surface);
-  border: 1px solid var(--app-border);
+  // без категории карточка красится в цвет темы, а не серым
+  // (категория перекрывает это инлайновым стилем)
+  background: var(--app-card);
+  border: 1px solid var(--app-card-border);
   border-radius: $radius-md;
   padding: 10px $space-md;
   transition:
