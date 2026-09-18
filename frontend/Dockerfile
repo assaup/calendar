@@ -1,5 +1,8 @@
 # Сборка фронта и раздача через nginx.
-FROM node:22-alpine AS build
+# Собираем на glibc-образе (не alpine/musl): нативный бинарник сборщика
+# rolldown для musl ставится ненадёжно — npm умеет пропускать платформенные
+# optional-зависимости (npm/cli#4828), и сборка падает.
+FROM node:22-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
