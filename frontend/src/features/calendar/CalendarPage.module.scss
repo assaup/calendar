@@ -26,6 +26,41 @@
   flex-wrap: wrap;
 }
 
+.right {
+  display: flex;
+  align-items: center;
+  gap: $space-sm;
+  flex-wrap: wrap;
+}
+
+.segLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+// подписи «A» разного размера в переключателе шрифта
+.fontS,
+.fontM,
+.fontL {
+  display: inline-block;
+  min-width: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.fontS {
+  font-size: 11px;
+}
+
+.fontM {
+  font-size: 13.5px;
+}
+
+.fontL {
+  font-size: 16px;
+}
+
 .month {
   font-family: var(--font-display);
   font-weight: 400;

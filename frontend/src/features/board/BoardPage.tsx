@@ -37,7 +37,8 @@ import {
   type Task,
   type TaskStatus,
 } from '../../store/tasks';
-import { useWorkspaceStore } from '../../store/workspace';
+import { useWorkspaceScope } from '../../store/workspace';
+import { WorkspaceBadge } from '../../components/ui/WorkspaceBadge';
 import { useTaskEditor } from '../tasks/taskEditor';
 import { cardFocus, type PastePatch } from '../tasks/cardFocus';
 import styles from './BoardPage.module.scss';
@@ -51,7 +52,15 @@ const STATUS_COLUMNS: { id: TaskStatus; title: string }[] = [
 ];
 const ALL_IDS: ColumnId[] = ['todo', 'in_progress', 'done', 'nodate'];
 
-function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
+function CardContent({
+  task,
+  dragging,
+  showWorkspace,
+}: {
+  task: Task;
+  dragging?: boolean;
+  showWorkspace?: boolean;
+}) {
   const toggleDone = useTasksStore((s) => s.toggleDone);
   const deleteTask = useTasksStore((s) => s.deleteTask);
   const category = useTasksStore((s) =>
@@ -118,11 +127,13 @@ function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
         </Menu>
       </div>
 
-      {(task.priority ||
+      {(showWorkspace ||
+        task.priority ||
         task.categoryId ||
         task.dueDate ||
         (task.subtasks?.length ?? 0) > 0) && (
         <div className={styles.cardMeta}>
+          {showWorkspace && <WorkspaceBadge workspaceId={task.workspaceId} />}
           <PriorityBadge priority={task.priority} />
           <CategoryBadge categoryId={task.categoryId} />
           {(task.subtasks?.length ?? 0) > 0 && (
@@ -147,7 +158,13 @@ function CardContent({ task, dragging }: { task: Task; dragging?: boolean }) {
   );
 }
 
-function SortableCard({ task }: { task: Task }) {
+function SortableCard({
+  task,
+  showWorkspace,
+}: {
+  task: Task;
+  showWorkspace?: boolean;
+}) {
   const openEdit = useTaskEditor((s) => s.openEdit);
   const {
     attributes,
@@ -181,7 +198,7 @@ function SortableCard({ task }: { task: Task }) {
       {...listeners}
       {...a11y}
     >
-      <CardContent task={task} />
+      <CardContent task={task} showWorkspace={showWorkspace} />
     </div>
   );
 }
@@ -191,6 +208,7 @@ function Column({
   title,
   hint,
   tasks,
+  showWorkspace,
   pastePatch,
   onCollapse,
   quickOpen,
@@ -204,6 +222,7 @@ function Column({
   title: string;
   hint?: string;
   tasks: Task[];
+  showWorkspace?: boolean;
   pastePatch: PastePatch;
   onCollapse?: () => void;
   quickOpen: boolean;
@@ -251,7 +270,11 @@ function Column({
       >
         <div className={styles.cards}>
           {tasks.map((task) => (
-            <SortableCard key={task.id} task={task} />
+            <SortableCard
+              key={task.id}
+              task={task}
+              showWorkspace={showWorkspace}
+            />
           ))}
         </div>
       </SortableContext>
@@ -285,7 +308,7 @@ export function BoardPage() {
   const addTask = useTasksStore((s) => s.addTask);
   const updateTask = useTasksStore((s) => s.updateTask);
   const moveTask = useTasksStore((s) => s.moveTask);
-  const activeWorkspace = useWorkspaceStore((s) => s.activeId);
+  const { isAll, targetId, inScope } = useWorkspaceScope();
 
   const [month, setMonth] = useState<Dayjs>(() => dayjs().startOf('month'));
   const [noDateCollapsed, setNoDateCollapsed] = useState(false);
@@ -304,7 +327,7 @@ export function BoardPage() {
     ? dayjs().format('YYYY-MM-DD')
     : month.startOf('month').format('YYYY-MM-DD');
 
-  const wsTasks = tasks.filter((t) => t.workspaceId === activeWorkspace);
+  const wsTasks = tasks.filter((t) => inScope(t.workspaceId));
   const tasksOf = (id: ColumnId): Task[] =>
     id === 'nodate'
       ? wsTasks.filter((t) => !t.dueDate && t.status !== 'done')
@@ -317,10 +340,10 @@ export function BoardPage() {
     const title = quickText.trim();
     if (title && quickCol) {
       if (quickCol === 'nodate') {
-        void addTask({ workspaceId: activeWorkspace, title, dueDate: null });
+        void addTask({ workspaceId: targetId, title, dueDate: null });
       } else {
         void addTask({
-          workspaceId: activeWorkspace,
+          workspaceId: targetId,
           title,
           status: quickCol,
           dueDate: monthDefaultDate,
@@ -389,7 +412,11 @@ export function BoardPage() {
   return (
     <PageShell
       title="Доска"
-      description="Колонки по статусу для выбранного месяца + бэклог без срока."
+      description={
+        isAll
+          ? 'Задачи всех досок вместе: колонки по статусу + бэклог без срока.'
+          : 'Колонки по статусу для выбранного месяца + бэклог без срока.'
+      }
     >
       <div className={styles.toolbar}>
         <ActionIcon
@@ -435,6 +462,7 @@ export function BoardPage() {
               id={col.id}
               title={col.title}
               tasks={tasksOf(col.id)}
+              showWorkspace={isAll}
               pastePatch={(src) => ({
                 status: col.id,
                 // дату оставляем, если она и так в этом месяце
@@ -461,6 +489,7 @@ export function BoardPage() {
               title="Без срока"
               hint="Бэклог — без даты"
               tasks={noDateTasks}
+              showWorkspace={isAll}
               pastePatch={{ dueDate: null }}
               onCollapse={() => setNoDateCollapsed(true)}
               {...quickProps('nodate')}
@@ -469,7 +498,9 @@ export function BoardPage() {
         </div>
 
         <DragOverlay>
-          {activeTask ? <CardContent task={activeTask} dragging /> : null}
+          {activeTask ? (
+            <CardContent task={activeTask} dragging showWorkspace={isAll} />
+          ) : null}
         </DragOverlay>
       </DndContext>
     </PageShell>

@@ -5,7 +5,7 @@ import { cardFocus, resolvePatch } from './cardFocus';
 import { useQuickCategory } from './quickCategory';
 import { useTaskEditor } from './taskEditor';
 import { useTasksStore, type Task } from '../../store/tasks';
-import { useWorkspaceStore } from '../../store/workspace';
+import { useWorkspaceStore, ALL_WORKSPACES } from '../../store/workspace';
 
 // ------------------------------------------------------------------
 // Горячие клавиши над карточкой под курсором:
@@ -56,7 +56,10 @@ function fieldsOf(t: Task) {
 }
 
 async function pasteCopy(src: Task) {
-  const activeWorkspace = useWorkspaceStore.getState().activeId;
+  // в «Все доски» копия остаётся на доске оригинала
+  const { activeId } = useWorkspaceStore.getState();
+  const activeWorkspace =
+    activeId === ALL_WORKSPACES ? src.workspaceId : activeId;
   const { addTask, updateTask, categories } = useTasksStore.getState();
   const patch = resolvePatch(cardFocus.getTarget(), src);
 
@@ -100,7 +103,9 @@ async function removeWithUndo(task: Task) {
       ...fieldsOf(task),
     });
     if (task.subtasks?.length) {
-      await updateTask(newId, { subtasks: task.subtasks.map((s) => ({ ...s })) });
+      await updateTask(newId, {
+        subtasks: task.subtasks.map((s) => ({ ...s })),
+      });
     }
   };
 
