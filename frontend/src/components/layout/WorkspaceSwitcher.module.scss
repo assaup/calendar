@@ -39,3 +39,8 @@
   align-items: center;
   gap: 4px;
 }
+
+.allIcon {
+  color: var(--app-accent);
+  flex-shrink: 0;
+}

@@ -31,3 +31,10 @@
     grid-template-columns: 1fr;
   }
 }
+
+.wsDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}

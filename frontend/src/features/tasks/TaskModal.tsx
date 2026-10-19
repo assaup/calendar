@@ -11,6 +11,7 @@ import {
   Checkbox,
   ActionIcon,
   Progress,
+  Select,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
 import { IconTrash, IconPlus, IconX } from '@tabler/icons-react';
@@ -22,10 +23,11 @@ import {
   type Priority,
   type SubTask,
 } from '../../store/tasks';
-import { useWorkspaceStore } from '../../store/workspace';
+import { useWorkspaceStore, ALL_WORKSPACES } from '../../store/workspace';
 import styles from './TaskModal.module.scss';
 
 interface FormState {
+  workspaceId: string;
   title: string;
   description: string;
   categoryId: string | null;
@@ -37,6 +39,7 @@ interface FormState {
 }
 
 const blank: FormState = {
+  workspaceId: '',
   title: '',
   description: '',
   categoryId: null,
@@ -58,7 +61,7 @@ export function TaskModal() {
   const addTask = useTasksStore((s) => s.addTask);
   const updateTask = useTasksStore((s) => s.updateTask);
   const deleteTask = useTasksStore((s) => s.deleteTask);
-  const activeWorkspace = useWorkspaceStore((s) => s.activeId);
+  const workspaces = useWorkspaceStore((s) => s.workspaces);
 
   const [form, setForm] = useState<FormState>(blank);
   const [subInput, setSubInput] = useState('');
@@ -81,6 +84,7 @@ export function TaskModal() {
       const t = useTasksStore.getState().tasks.find((x) => x.id === editingId);
       if (t) {
         setForm({
+          workspaceId: t.workspaceId,
           title: t.title,
           description: t.description,
           categoryId: t.categoryId,
@@ -92,8 +96,11 @@ export function TaskModal() {
         });
       }
     } else {
+      const ws = useWorkspaceStore.getState();
       setForm({
         ...blank,
+        // новая задача — на текущую доску (в «Все доски» — на последнюю)
+        workspaceId: ws.activeId === ALL_WORKSPACES ? ws.homeId : ws.activeId,
         status: presetStatus ?? 'todo',
         startDate: presetDate ?? null,
         dueDate: presetDate ?? null,
@@ -130,6 +137,20 @@ export function TaskModal() {
     setForm((f) => ({ ...f, [key]: value }));
   };
 
+  // категории у каждой доски свои — при переносе на другую доску
+  // берём одноимённую категорию, если она там есть
+  const changeWorkspace = (workspaceId: string) => {
+    if (workspaceId === form.workspaceId) return;
+    const { categories } = useTasksStore.getState();
+    const oldCat = categories.find((c) => c.id === form.categoryId);
+    const categoryId =
+      categories.find(
+        (c) => c.workspaceId === workspaceId && c.name === oldCat?.name,
+      )?.id ?? null;
+    dirty.current = true;
+    setForm((f) => ({ ...f, workspaceId, categoryId }));
+  };
+
   const addSub = () => {
     const title = subInput.trim();
     if (!title) return;
@@ -157,7 +178,7 @@ export function TaskModal() {
   const handleCreate = async () => {
     if (!canSave) return;
     const id = await addTask({
-      workspaceId: activeWorkspace,
+      workspaceId: form.workspaceId,
       title: form.title,
       description: form.description,
       categoryId: form.categoryId,
@@ -209,7 +230,30 @@ export function TaskModal() {
 
           {/* Правая колонка: свойства */}
           <div className={styles.col}>
+            {workspaces.length > 1 && (
+              <Select
+                label="Доска"
+                data={workspaces.map((w) => ({ value: w.id, label: w.name }))}
+                value={form.workspaceId}
+                onChange={(v) => v && changeWorkspace(v)}
+                allowDeselect={false}
+                renderOption={({ option }) => (
+                  <Group gap={8} wrap="nowrap">
+                    <span
+                      className={styles.wsDot}
+                      style={{
+                        background: workspaces.find(
+                          (w) => w.id === option.value,
+                        )?.color,
+                      }}
+                    />
+                    <span>{option.label}</span>
+                  </Group>
+                )}
+              />
+            )}
             <CategorySelect
+              workspaceId={form.workspaceId}
               value={form.categoryId}
               onChange={(v) => set('categoryId', v)}
             />

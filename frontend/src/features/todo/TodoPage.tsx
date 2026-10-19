@@ -23,7 +23,8 @@ import { PageShell } from '../../components/ui/PageShell';
 import { CategoryBadge } from '../../components/ui/CategoryBadge';
 import { PriorityBadge } from '../../components/ui/PriorityBadge';
 import { useTasksStore, isOverdue, PRIORITY_META } from '../../store/tasks';
-import { useWorkspaceStore } from '../../store/workspace';
+import { useWorkspaceStore, useWorkspaceScope } from '../../store/workspace';
+import { WorkspaceBadge } from '../../components/ui/WorkspaceBadge';
 import { useTaskEditor } from '../tasks/taskEditor';
 import { cardFocus } from '../tasks/cardFocus';
 import styles from './TodoPage.module.scss';
@@ -36,7 +37,8 @@ export function TodoPage() {
   const categories = useTasksStore((s) => s.categories);
   const toggleDone = useTasksStore((s) => s.toggleDone);
   const deleteTask = useTasksStore((s) => s.deleteTask);
-  const activeWorkspace = useWorkspaceStore((s) => s.activeId);
+  const workspaces = useWorkspaceStore((s) => s.workspaces);
+  const { isAll, inScope } = useWorkspaceScope();
   const openNew = useTaskEditor((s) => s.openNew);
   const openEdit = useTaskEditor((s) => s.openEdit);
 
@@ -49,7 +51,7 @@ export function TodoPage() {
 
   const query = search.trim().toLowerCase();
 
-  const inWorkspace = tasks.filter((t) => t.workspaceId === activeWorkspace);
+  const inWorkspace = tasks.filter((t) => inScope(t.workspaceId));
   const overdueCount = inWorkspace.filter(isOverdue).length;
 
   const visible = inWorkspace
@@ -93,14 +95,24 @@ export function TodoPage() {
   const categoryOptions = [
     { value: 'none', label: 'Без категории' },
     ...categories
-      .filter((c) => c.workspaceId === activeWorkspace)
-      .map((c) => ({ value: c.id, label: c.name })),
+      .filter((c) => inScope(c.workspaceId))
+      .map((c) => ({
+        value: c.id,
+        // в «Все доски» одноимённые категории разных досок различаем по доске
+        label: isAll
+          ? `${c.name} · ${workspaces.find((w) => w.id === c.workspaceId)?.name ?? ''}`
+          : c.name,
+      })),
   ];
 
   return (
     <PageShell
       title="Задачи"
-      description="Все задачи пространства одним списком."
+      description={
+        isAll
+          ? 'Задачи всех досок одним списком.'
+          : 'Все задачи доски одним списком.'
+      }
       action={
         <Button leftSection={<IconPlus size={16} />} onClick={() => openNew()}>
           Добавить
@@ -226,6 +238,9 @@ export function TodoPage() {
                       >
                         {task.title}
                       </span>
+                      {isAll && (
+                        <WorkspaceBadge workspaceId={task.workspaceId} />
+                      )}
                       {subs.length > 0 && (
                         <span className={styles.subs}>
                           <IconListCheck size={13} />
