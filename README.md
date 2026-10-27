@@ -37,6 +37,14 @@
 | ![Список задач](docs/screenshots/list-light.png) **Список задач** (светлая тема) | ![Заметки](docs/screenshots/notes.png) **Заметки** с папками |
 | ![Панель](docs/screenshots/dashboard.png) **Панель** со статистикой | |
 
+**На телефоне** — доска и боковое меню (тёмная тема):
+
+<p>
+  <img src="docs/screenshots/mobile-board.png" alt="Доска на телефоне" width="260">
+  &nbsp;
+  <img src="docs/screenshots/mobile-menu.png" alt="Меню на телефоне" width="260">
+</p>
+
 Скриншоты снимаются автоматически на демо-данных (реальные данные не участвуют):
 `cd frontend && npm run screenshots` → `docs/screenshots/`.
 

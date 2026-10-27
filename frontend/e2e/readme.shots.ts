@@ -331,4 +331,28 @@ test('скриншоты для README', async ({ page }) => {
   await page.goto('/calendar');
   await calendarReady();
   await shot(page, 'calendar-dark');
+
+  // --- телефон: та же сессия, мобильный экран (как iPhone) ---
+  const mobile = await page
+    .context()
+    .browser()!
+    .newContext({
+      baseURL: test.info().project.use.baseURL,
+      storageState: await page.context().storageState(),
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 2,
+      isMobile: true,
+      hasTouch: true,
+      locale: 'ru-RU',
+      timezoneId: 'Europe/Moscow',
+    });
+  const phone = await mobile.newPage();
+  await phone.goto('/board');
+  await phone.getByText('Созвон с командой дизайна').waitFor();
+  await shot(phone, 'mobile-board');
+
+  // боковое меню, открытое бургером
+  await phone.getByRole('button', { name: 'Меню', exact: true }).click();
+  await shot(phone, 'mobile-menu');
+  await mobile.close();
 });
