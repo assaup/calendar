@@ -45,12 +45,17 @@ export function CalendarPage() {
   const title = month.format('MMMM YYYY');
   const capitalized = title.charAt(0).toUpperCase() + title.slice(1);
 
-  // сколько задач в этом месяце (по датам начала/срока)
+  // сколько задач видно в этом месяце: диапазон «начало–срок» пересекается
+  // с месяцем (задача может идти через весь месяц)
+  const monthStart = month.startOf('month').format('YYYY-MM-DD');
+  const monthEnd = month.endOf('month').format('YYYY-MM-DD');
   const monthCount = tasks.filter((t) => {
     if (!inScope(t.workspaceId)) return false;
-    const inMonth = (d: string | null) =>
-      !!d && dayjs(d).isSame(month, 'month');
-    return inMonth(t.startDate) || inMonth(t.dueDate);
+    const a = t.startDate ?? t.dueDate;
+    const b = t.dueDate ?? t.startDate;
+    if (!a || !b) return false;
+    const [from, to] = a <= b ? [a, b] : [b, a];
+    return from <= monthEnd && to >= monthStart;
   }).length;
 
   return (

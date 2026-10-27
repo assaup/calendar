@@ -50,6 +50,12 @@ const blank: FormState = {
   dueDate: null,
 };
 
+/** начало позже срока (сервер такое не примет) */
+const datesInvalid = (f: FormState) =>
+  !!f.startDate && !!f.dueDate && f.startDate > f.dueDate;
+
+const isValid = (f: FormState) => !!f.title.trim() && !datesInvalid(f);
+
 const uid = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
@@ -111,7 +117,7 @@ export function TaskModal() {
   // Автосохранение при редактировании — кнопка «Сохранить» не нужна
   useEffect(() => {
     if (!opened || !editingId || !dirty.current) return;
-    if (!form.title.trim()) return;
+    if (!isValid(form)) return;
     const timer = setTimeout(() => {
       dirty.current = false;
       void updateTask(editingId, form);
@@ -122,7 +128,7 @@ export function TaskModal() {
   // Если закрыли раньше, чем сработала задержка, — дописываем сразу
   const flush = () => {
     if (!editingId || !dirty.current) return;
-    if (!latest.current.title.trim()) return;
+    if (!isValid(latest.current)) return;
     dirty.current = false;
     void updateTask(editingId, latest.current);
   };
@@ -173,21 +179,28 @@ export function TaskModal() {
     ? (doneCount / form.subtasks.length) * 100
     : 0;
 
-  const canSave = form.title.trim().length > 0;
+  const datesError = datesInvalid(form)
+    ? 'Срок не может быть раньше начала'
+    : null;
+  const canSave = isValid(form);
 
   const handleCreate = async () => {
     if (!canSave) return;
-    const id = await addTask({
-      workspaceId: form.workspaceId,
-      title: form.title,
-      description: form.description,
-      categoryId: form.categoryId,
-      status: form.status,
-      priority: form.priority,
-      startDate: form.startDate,
-      dueDate: form.dueDate,
-    });
-    if (form.subtasks.length) void updateTask(id, { subtasks: form.subtasks });
+    try {
+      await addTask({
+        workspaceId: form.workspaceId,
+        title: form.title,
+        description: form.description,
+        categoryId: form.categoryId,
+        status: form.status,
+        priority: form.priority,
+        startDate: form.startDate,
+        dueDate: form.dueDate,
+        subtasks: form.subtasks,
+      });
+    } catch {
+      return; // уведомление уже показал стор; окно не закрываем, текст не теряется
+    }
     close();
   };
 
@@ -269,6 +282,7 @@ export function TaskModal() {
               label="Срок"
               placeholder="—"
               value={form.dueDate}
+              error={datesError}
               onChange={(v) => set('dueDate', v)}
               valueFormat="D MMM YYYY"
               clearable

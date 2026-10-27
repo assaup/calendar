@@ -35,9 +35,14 @@ import { useWorkspaceScope, useWorkspace } from '../../store/workspace';
 import { NoteEditor } from './NoteEditor';
 import styles from './NotesPage.module.scss';
 
+// Текст превью: теги -> пробелы, сущности (&amp; &nbsp; …) раскодируются.
+// DOMParser не выполняет скрипты и не грузит картинки — безопасно.
+const parser = new DOMParser();
 const stripHtml = (html: string) =>
-  html
-    .replace(/<[^>]+>/g, ' ')
+  (
+    parser.parseFromString(html.replace(/<[^>]+>/g, ' $& '), 'text/html').body
+      .textContent ?? ''
+  )
     .replace(/\s+/g, ' ')
     .trim();
 

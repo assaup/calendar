@@ -1,5 +1,7 @@
 from rest_framework import viewsets
 
+from apps.workspaces.validation import filter_by_workspace_param
+
 from .models import Note, NoteFolder
 from .serializers import NoteFolderSerializer, NoteSerializer
 
@@ -9,10 +11,7 @@ class NoteFolderViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = NoteFolder.objects.filter(workspace__owner=self.request.user)
-        workspace = self.request.query_params.get("workspace")
-        if workspace:
-            qs = qs.filter(workspace_id=workspace)
-        return qs
+        return filter_by_workspace_param(qs, self.request)
 
 
 class NoteViewSet(viewsets.ModelViewSet):
@@ -20,7 +19,4 @@ class NoteViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Note.objects.filter(workspace__owner=self.request.user)
-        workspace = self.request.query_params.get("workspace")
-        if workspace:
-            qs = qs.filter(workspace_id=workspace)
-        return qs
+        return filter_by_workspace_param(qs, self.request)

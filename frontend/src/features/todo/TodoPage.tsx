@@ -27,6 +27,7 @@ import { useWorkspaceStore, useWorkspaceScope } from '../../store/workspace';
 import { WorkspaceBadge } from '../../components/ui/WorkspaceBadge';
 import { useTaskEditor } from '../tasks/taskEditor';
 import { cardFocus } from '../tasks/cardFocus';
+import { removeWithUndo } from '../tasks/useCardHotkeys';
 import styles from './TodoPage.module.scss';
 
 type StatusFilter = 'all' | 'active' | 'done';
@@ -36,7 +37,6 @@ export function TodoPage() {
   const tasks = useTasksStore((s) => s.tasks);
   const categories = useTasksStore((s) => s.categories);
   const toggleDone = useTasksStore((s) => s.toggleDone);
-  const deleteTask = useTasksStore((s) => s.deleteTask);
   const workspaces = useWorkspaceStore((s) => s.workspaces);
   const { isAll, inScope } = useWorkspaceScope();
   const openNew = useTaskEditor((s) => s.openNew);
@@ -52,6 +52,12 @@ export function TodoPage() {
   const query = search.trim().toLowerCase();
 
   const inWorkspace = tasks.filter((t) => inScope(t.workspaceId));
+  // категория из фильтра могла остаться от другой доски — тогда не фильтруем
+  const activeCategory =
+    categoryFilter === 'none' ||
+    categories.some((c) => c.id === categoryFilter && inScope(c.workspaceId))
+      ? categoryFilter
+      : null;
   const overdueCount = inWorkspace.filter(isOverdue).length;
 
   const visible = inWorkspace
@@ -63,11 +69,11 @@ export function TodoPage() {
           : t.status !== 'done',
     )
     .filter((t) =>
-      !categoryFilter
+      !activeCategory
         ? true
-        : categoryFilter === 'none'
+        : activeCategory === 'none'
           ? t.categoryId === null
-          : t.categoryId === categoryFilter,
+          : t.categoryId === activeCategory,
     )
     .filter((t) =>
       !priorityFilter
@@ -130,7 +136,7 @@ export function TodoPage() {
         <Select
           placeholder="Все категории"
           data={categoryOptions}
-          value={categoryFilter}
+          value={activeCategory}
           onChange={setCategoryFilter}
           clearable
           w={170}
@@ -300,7 +306,7 @@ export function TodoPage() {
                         <Menu.Item
                           color="red"
                           leftSection={<IconTrash size={15} />}
-                          onClick={() => deleteTask(task.id)}
+                          onClick={() => void removeWithUndo(task)}
                         >
                           Удалить
                         </Menu.Item>

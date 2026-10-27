@@ -41,6 +41,7 @@ import { useWorkspaceScope } from '../../store/workspace';
 import { WorkspaceBadge } from '../../components/ui/WorkspaceBadge';
 import { useTaskEditor } from '../tasks/taskEditor';
 import { cardFocus, type PastePatch } from '../tasks/cardFocus';
+import { removeWithUndo } from '../tasks/useCardHotkeys';
 import styles from './BoardPage.module.scss';
 
 type ColumnId = TaskStatus | 'nodate';
@@ -62,7 +63,6 @@ function CardContent({
   showWorkspace?: boolean;
 }) {
   const toggleDone = useTasksStore((s) => s.toggleDone);
-  const deleteTask = useTasksStore((s) => s.deleteTask);
   const category = useTasksStore((s) =>
     s.categories.find((c) => c.id === task.categoryId),
   );
@@ -119,7 +119,7 @@ function CardContent({
             <Menu.Item
               color="red"
               leftSection={<IconTrash size={15} />}
-              onClick={() => deleteTask(task.id)}
+              onClick={() => void removeWithUndo(task)}
             >
               Удалить
             </Menu.Item>
@@ -330,7 +330,9 @@ export function BoardPage() {
   const wsTasks = tasks.filter((t) => inScope(t.workspaceId));
   const tasksOf = (id: ColumnId): Task[] =>
     id === 'nodate'
-      ? wsTasks.filter((t) => !t.dueDate && t.status !== 'done')
+      ? // выполненные без срока тоже здесь (зачёркнутые) — иначе, отметив
+        // задачу из бэклога, её больше нигде на доске не найти
+        wsTasks.filter((t) => !t.dueDate)
       : wsTasks.filter((t) => inMonth(t) && t.status === id);
 
   const columnOf = (t: Task): ColumnId =>

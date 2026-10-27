@@ -91,9 +91,12 @@ async function pasteCopy(src: Task) {
   });
 }
 
-async function removeWithUndo(task: Task) {
+/** Удалить задачу с возможностью отменить (уведомление с кнопкой) */
+export async function removeWithUndo(task: Task) {
   const { deleteTask, addTask, updateTask } = useTasksStore.getState();
   await deleteTask(task.id);
+  // сервер не удалил — стор уже вернул задачу и показал ошибку
+  if (useTasksStore.getState().tasks.some((t) => t.id === task.id)) return;
 
   const id = `undo-${task.id}`;
   const restore = async () => {
