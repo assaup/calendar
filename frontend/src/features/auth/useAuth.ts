@@ -42,7 +42,12 @@ export const useAuth = create<AuthState>((set) => ({
   },
 
   logout: async () => {
-    await logoutRequest();
-    set({ user: null, status: 'anon' });
+    try {
+      await logoutRequest();
+    } catch {
+      // сессия уже истекла или сеть упала — выходим локально всё равно
+    } finally {
+      set({ user: null, status: 'anon' });
+    }
   },
 }));

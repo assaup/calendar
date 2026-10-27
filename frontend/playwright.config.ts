@@ -56,6 +56,9 @@ export default defineConfig({
         ALLOWED_HOSTS: 'localhost,127.0.0.1',
         CSRF_TRUSTED_ORIGINS: `${WEB_URL},http://127.0.0.1:${WEB_PORT}`,
         CORS_ALLOWED_ORIGINS: `${WEB_URL},http://127.0.0.1:${WEB_PORT}`,
+        // каждый тест регистрирует пользователя — лимиты попыток для e2e снимаем
+        THROTTLE_LOGIN: '1000/min',
+        THROTTLE_REGISTER: '1000/min',
       },
     },
     {

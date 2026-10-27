@@ -33,8 +33,15 @@ export async function apiCall<T = unknown>(
 }
 
 /** Регистрирует пользователя через API (быстро) и открывает приложение. */
-export async function signUp(page: Page, email = uniqueEmail(), name = 'Тестер') {
+export async function signUp(
+  page: Page,
+  email = uniqueEmail(),
+  name = 'Тестер',
+) {
   await page.goto('/');
+  // ждём, пока приложение само сходит в /auth/me/: иначе его ответ может
+  // заменить csrf-куку между чтением токена и регистрацией
+  await page.waitForLoadState('networkidle');
   const r = await apiCall(page, 'post', '/api/auth/register/', {
     email,
     password: PASSWORD,
@@ -63,12 +70,24 @@ export const listTasks = async (page: Page) =>
   (await apiCall<SrvTask[]>(page, 'get', '/api/tasks/')).body;
 
 export const listWorkspaces = async (page: Page) =>
-  (await apiCall<{ id: number; name: string }[]>(page, 'get', '/api/workspaces/')).body;
+  (
+    await apiCall<{ id: number; name: string }[]>(
+      page,
+      'get',
+      '/api/workspaces/',
+    )
+  ).body;
 
 /** Создаёт задачу через API и перезагружает страницу, чтобы она подтянулась. */
-export async function seedTask(page: Page, patch: Partial<SrvTask> & { title: string }) {
+export async function seedTask(
+  page: Page,
+  patch: Partial<SrvTask> & { title: string },
+) {
   const [ws] = await listWorkspaces(page);
-  const r = await apiCall<SrvTask>(page, 'post', '/api/tasks/', { workspace: ws.id, ...patch });
+  const r = await apiCall<SrvTask>(page, 'post', '/api/tasks/', {
+    workspace: ws.id,
+    ...patch,
+  });
   expect(r.status, JSON.stringify(r.body)).toBe(201);
   return r.body;
 }
@@ -80,7 +99,11 @@ export const today = () => {
 };
 
 /** Перетаскивание для dnd-kit: нужен плавный ход мыши (activationConstraint 6px). */
-export async function dragTo(page: Page, from: { x: number; y: number }, to: { x: number; y: number }) {
+export async function dragTo(
+  page: Page,
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+) {
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(from.x + 10, from.y + 10, { steps: 5 });
@@ -89,7 +112,10 @@ export async function dragTo(page: Page, from: { x: number; y: number }, to: { x
   await page.mouse.up();
 }
 
-export async function centerOf(page: Page, selector: ReturnType<Page['locator']>) {
+export async function centerOf(
+  page: Page,
+  selector: ReturnType<Page['locator']>,
+) {
   const box = await selector.boundingBox();
   if (!box) throw new Error('элемент не виден');
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };

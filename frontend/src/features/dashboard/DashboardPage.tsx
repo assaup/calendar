@@ -64,17 +64,20 @@ export function DashboardPage() {
   const catCounts = (
     isAll
       ? workspaces.map((w) => ({
+          key: `ws-${w.id}`,
           label: w.name,
           color: w.color,
           count: items.filter((t) => t.workspaceId === w.id).length,
         }))
       : categories
           .map((c) => ({
+            key: `cat-${c.id}`,
             label: c.name,
             color: c.color,
             count: items.filter((t) => t.categoryId === c.id).length,
           }))
           .concat({
+            key: 'none',
             label: 'Без категории',
             color: 'var(--app-text-dim)',
             count: items.filter((t) => t.categoryId === null).length,
@@ -143,7 +146,7 @@ export function DashboardPage() {
           </div>
           <div className={styles.bars}>
             {catCounts.map((c) => (
-              <div key={c.label} className={styles.barRow}>
+              <div key={c.key} className={styles.barRow}>
                 <span className={styles.barLabel}>{c.label}</span>
                 <div className={styles.barTrack}>
                   <div

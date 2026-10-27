@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { workspacesApi } from '../lib/resources';
+import { workspacesApi, categoriesApi } from '../lib/resources';
+import { notifyError } from '../lib/notify';
+import { reinsert, restoreFields } from '../lib/optimistic';
+import { useTasksStore } from './tasks';
+import { useNotesStore } from './notes';
 
 export interface Workspace {
   id: string;
@@ -59,27 +63,62 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         }),
 
       addWorkspace: async (name, color) => {
-        const w = await workspacesApi.create(name, color);
+        let w: Workspace;
+        try {
+          w = await workspacesApi.create(name, color);
+        } catch (error) {
+          notifyError('Доска не создалась.', error);
+          throw error;
+        }
         set((s) => ({
           workspaces: [...s.workspaces, w],
           activeId: w.id,
           homeId: w.id,
         }));
+        // сервер сразу кладёт в новую доску базовые категории — подтягиваем их
+        try {
+          const cats = await categoriesApi.list();
+          useTasksStore.setState((s) => ({
+            categories: [
+              ...s.categories.filter((c) => c.workspaceId !== w.id),
+              ...cats.filter((c) => c.workspaceId === w.id),
+            ],
+          }));
+        } catch {
+          // не страшно: категории появятся после перезагрузки
+        }
         return w.id;
       },
 
       updateWorkspace: async (id, patch) => {
+        const prev = get().workspaces.find((w) => w.id === id);
         set((s) => ({
           workspaces: s.workspaces.map((w) =>
             w.id === id ? { ...w, ...patch } : w,
           ),
         }));
-        await workspacesApi.update(id, patch);
+        try {
+          await workspacesApi.update(id, patch);
+        } catch (error) {
+          if (prev) {
+            set((s) => ({
+              workspaces: restoreFields(
+                s.workspaces,
+                id,
+                prev,
+                Object.keys(patch),
+              ),
+            }));
+          }
+          notifyError('Доска не сохранилась.', error);
+        }
       },
 
       deleteWorkspace: async (id) => {
         const { workspaces, activeId, homeId } = get();
         if (workspaces.length <= 1) return;
+        const index = workspaces.findIndex((w) => w.id === id);
+        if (index < 0) return;
         const next = workspaces.filter((w) => w.id !== id);
         const nextHome = homeId === id ? next[0].id : homeId;
         set({
@@ -87,7 +126,52 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           activeId: activeId === id ? nextHome : activeId,
           homeId: nextHome,
         });
-        await workspacesApi.remove(id);
+
+        // на сервере всё содержимое доски удаляется каскадом — убираем и
+        // локально, иначе оно остаётся видно в «Все доски»
+        const tasksBefore = useTasksStore.getState();
+        const notesBefore = useNotesStore.getState();
+        useTasksStore.setState({
+          tasks: tasksBefore.tasks.filter((t) => t.workspaceId !== id),
+          categories: tasksBefore.categories.filter(
+            (c) => c.workspaceId !== id,
+          ),
+        });
+        useNotesStore.setState({
+          notes: notesBefore.notes.filter((n) => n.workspaceId !== id),
+          folders: notesBefore.folders.filter((f) => f.workspaceId !== id),
+        });
+
+        try {
+          await workspacesApi.remove(id);
+        } catch (error) {
+          set((s) => ({
+            workspaces: reinsert(s.workspaces, workspaces[index], index),
+            activeId: s.activeId === nextHome ? activeId : s.activeId,
+            homeId,
+          }));
+          useTasksStore.setState((s) => ({
+            tasks: [
+              ...s.tasks,
+              ...tasksBefore.tasks.filter((t) => t.workspaceId === id),
+            ],
+            categories: [
+              ...s.categories,
+              ...tasksBefore.categories.filter((c) => c.workspaceId === id),
+            ],
+          }));
+          useNotesStore.setState((s) => ({
+            notes: [
+              ...s.notes,
+              ...notesBefore.notes.filter((n) => n.workspaceId === id),
+            ],
+            folders: [
+              ...s.folders,
+              ...notesBefore.folders.filter((f) => f.workspaceId === id),
+            ],
+          }));
+          notifyError('Доска не удалилась.', error);
+        }
       },
     }),
     {

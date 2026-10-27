@@ -22,6 +22,7 @@ import {
   ALL_WORKSPACES,
   type Workspace,
 } from '../../store/workspace';
+import { modals } from '@mantine/modals';
 import { ColorSwatchPicker } from '../ui/ColorSwatchPicker';
 import { PALETTE_VALUES } from '../../lib/palette';
 import styles from './WorkspaceSwitcher.module.scss';
@@ -67,6 +68,22 @@ export function WorkspaceSwitcher() {
     }
   };
 
+  // доска удаляется на сервере каскадом — со всеми задачами и заметками
+  const confirmDelete = (w: Workspace) =>
+    modals.openConfirmModal({
+      title: 'Удалить доску?',
+      centered: true,
+      children: (
+        <Text size="sm">
+          Доска «{w.name}» будет удалена вместе со всеми её задачами, заметками
+          и категориями. Действие необратимо.
+        </Text>
+      ),
+      labels: { confirm: 'Удалить', cancel: 'Отмена' },
+      confirmProps: { color: 'red' },
+      onConfirm: () => void deleteWorkspace(w.id),
+    });
+
   return (
     <>
       <Menu shadow="md" width={300} position="bottom-start">
@@ -77,12 +94,12 @@ export function WorkspaceSwitcher() {
             ) : (
               <span
                 className={styles.dot}
-                style={{ background: active.color }}
+                style={{ background: active?.color }}
                 aria-hidden
               />
             )}
             <Text fw={600} size="md" className={styles.triggerName} truncate>
-              {isAll ? 'Все доски' : active.name}
+              {isAll ? 'Все доски' : (active?.name ?? 'Нет досок')}
             </Text>
             <IconChevronDown size={18} className={styles.chevron} />
           </UnstyledButton>
@@ -130,7 +147,7 @@ export function WorkspaceSwitcher() {
                       aria-label={`Удалить доску ${w.name}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        void deleteWorkspace(w.id);
+                        confirmDelete(w);
                       }}
                     >
                       <IconTrash size={14} />

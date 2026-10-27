@@ -1,10 +1,13 @@
 import { create } from 'zustand';
 import dayjs from 'dayjs';
 import { tasksApi, categoriesApi } from '../lib/resources';
+import { notifyError } from '../lib/notify';
+import { reinsert, restoreFields } from '../lib/optimistic';
 
 // ------------------------------------------------------------------
 // Хранилище задач и категорий. Данные — с сервера (Django DRF).
-// Мутации оптимистичны: сначала меняем локально, затем шлём запрос.
+// Мутации оптимистичны: сначала меняем локально, затем шлём запрос;
+// при ошибке откатываем и показываем уведомление.
 // ------------------------------------------------------------------
 
 export type TaskStatus = 'todo' | 'in_progress' | 'done';
@@ -55,6 +58,7 @@ export interface NewTaskInput {
   priority?: Priority | null;
   startDate?: string | null;
   dueDate?: string | null;
+  subtasks?: SubTask[];
 }
 
 interface TasksState {
@@ -100,30 +104,54 @@ export const useTasksStore = create<TasksState>()((set, get) => ({
   hydrate: ({ categories, tasks }) => set({ categories, tasks }),
 
   addTask: async (input) => {
-    const task = await tasksApi.create({
-      workspaceId: input.workspaceId,
-      title: input.title ?? 'Новая задача',
-      description: input.description ?? '',
-      categoryId: input.categoryId ?? null,
-      status: input.status ?? 'todo',
-      priority: input.priority ?? null,
-      startDate: input.startDate ?? null,
-      dueDate: input.dueDate ?? null,
-    });
-    set((s) => ({ tasks: [...s.tasks, task] }));
-    return task.id;
+    try {
+      const task = await tasksApi.create({
+        workspaceId: input.workspaceId,
+        title: input.title ?? 'Новая задача',
+        description: input.description ?? '',
+        categoryId: input.categoryId ?? null,
+        status: input.status ?? 'todo',
+        priority: input.priority ?? null,
+        startDate: input.startDate ?? null,
+        dueDate: input.dueDate ?? null,
+        // подзадачи — в том же запросе, чтобы не потерялись по отдельности
+        ...(input.subtasks?.length ? { subtasks: input.subtasks } : {}),
+      });
+      set((s) => ({ tasks: [...s.tasks, task] }));
+      return task.id;
+    } catch (error) {
+      notifyError('Задача не создалась.', error);
+      throw error;
+    }
   },
 
   updateTask: async (id, patch) => {
+    const prev = get().tasks.find((t) => t.id === id);
     set((s) => ({
       tasks: s.tasks.map((t) => (t.id === id ? { ...t, ...patch } : t)),
     }));
-    await tasksApi.update(id, patch);
+    try {
+      await tasksApi.update(id, patch);
+    } catch (error) {
+      if (prev) {
+        set((s) => ({
+          tasks: restoreFields(s.tasks, id, prev, Object.keys(patch)),
+        }));
+      }
+      notifyError('Изменения задачи не сохранились.', error);
+    }
   },
 
   deleteTask: async (id) => {
+    const index = get().tasks.findIndex((t) => t.id === id);
+    const prev = get().tasks[index];
     set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
-    await tasksApi.remove(id);
+    try {
+      await tasksApi.remove(id);
+    } catch (error) {
+      if (prev) set((s) => ({ tasks: reinsert(s.tasks, prev, index) }));
+      notifyError('Задача не удалилась.', error);
+    }
   },
 
   toggleDone: async (id) => {
@@ -133,7 +161,14 @@ export const useTasksStore = create<TasksState>()((set, get) => ({
     set((s) => ({
       tasks: s.tasks.map((t) => (t.id === id ? { ...t, status } : t)),
     }));
-    await tasksApi.update(id, { status });
+    try {
+      await tasksApi.update(id, { status });
+    } catch (error) {
+      set((s) => ({
+        tasks: restoreFields(s.tasks, id, task, ['status']),
+      }));
+      notifyError('Статус задачи не сохранился.', error);
+    }
   },
 
   moveTask: (activeId, overId) => {
@@ -146,33 +181,69 @@ export const useTasksStore = create<TasksState>()((set, get) => ({
     // сохраняем порядок: обновляем position у сдвинутого диапазона
     const lo = Math.min(from, to);
     const hi = Math.max(from, to);
+    const requests = [];
     for (let i = lo; i <= hi; i += 1) {
-      void tasksApi.setPosition(next[i].id, i);
+      requests.push(tasksApi.setPosition(next[i].id, i));
     }
+    Promise.all(requests).catch((error) =>
+      notifyError('Порядок задач не сохранился.', error),
+    );
   },
 
   addCategory: async (name, color, workspaceId) => {
-    const cat = await categoriesApi.create(name, color, workspaceId);
-    set((s) => ({ categories: [...s.categories, cat] }));
-    return cat.id;
+    try {
+      const cat = await categoriesApi.create(name, color, workspaceId);
+      set((s) => ({ categories: [...s.categories, cat] }));
+      return cat.id;
+    } catch (error) {
+      notifyError('Категория не создалась (возможно, такая уже есть).', error);
+      throw error;
+    }
   },
 
   updateCategory: async (id, patch) => {
+    const prev = get().categories.find((c) => c.id === id);
     set((s) => ({
       categories: s.categories.map((c) =>
         c.id === id ? { ...c, ...patch } : c,
       ),
     }));
-    await categoriesApi.update(id, patch);
+    try {
+      await categoriesApi.update(id, patch);
+    } catch (error) {
+      if (prev) {
+        set((s) => ({
+          categories: restoreFields(s.categories, id, prev, Object.keys(patch)),
+        }));
+      }
+      notifyError('Категория не сохранилась.', error);
+    }
   },
 
   deleteCategory: async (id) => {
+    const index = get().categories.findIndex((c) => c.id === id);
+    const prev = get().categories[index];
+    const detached = get()
+      .tasks.filter((t) => t.categoryId === id)
+      .map((t) => t.id);
     set((s) => ({
       categories: s.categories.filter((c) => c.id !== id),
       tasks: s.tasks.map((t) =>
         t.categoryId === id ? { ...t, categoryId: null } : t,
       ),
     }));
-    await categoriesApi.remove(id);
+    try {
+      await categoriesApi.remove(id);
+    } catch (error) {
+      if (prev) {
+        set((s) => ({
+          categories: reinsert(s.categories, prev, index),
+          tasks: s.tasks.map((t) =>
+            detached.includes(t.id) ? { ...t, categoryId: id } : t,
+          ),
+        }));
+      }
+      notifyError('Категория не удалилась.', error);
+    }
   },
 }));

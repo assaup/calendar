@@ -21,6 +21,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm test
       - run: npm run build
 
   backend:
@@ -28,9 +29,25 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    # тесты — на том же Postgres, что и в проде (SQLite кое-что прощает)
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: planner
+          POSTGRES_PASSWORD: planner
+          POSTGRES_DB: planner
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U planner"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       SECRET_KEY: ci-secret
       DEBUG: "True"
+      DATABASE_URL: postgres://planner:planner@localhost:5432/planner
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -40,3 +57,31 @@ jobs:
       - run: ruff check apps config
       - run: python manage.py check
       - run: python manage.py makemigrations --check --dry-run
+      - run: python manage.py test
+
+  e2e:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      E2E_PYTHON: python
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r ../backend/requirements.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report

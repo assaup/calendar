@@ -30,7 +30,9 @@ function channel(v: number): number {
 }
 
 function luminance(hex: string): number {
-  const c = hex.replace('#', '');
+  let c = hex.replace('#', '');
+  // короткая запись #rgb -> #rrggbb
+  if (c.length === 3) c = [...c].map((ch) => ch + ch).join('');
   const r = parseInt(c.slice(0, 2), 16);
   const g = parseInt(c.slice(2, 4), 16);
   const b = parseInt(c.slice(4, 6), 16);

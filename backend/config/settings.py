@@ -16,8 +16,10 @@ env = environ.Env(
 environ.Env.read_env(BASE_DIR / ".env")
 
 # --- Базовое ---------------------------------------------------------------
-SECRET_KEY = env("SECRET_KEY", default="dev-insecure-change-me")
 DEBUG = env("DEBUG")
+# Дефолтный ключ — только для разработки. В проде (DEBUG=False) без SECRET_KEY
+# запуск падает: иначе подпись сессий и CSRF была бы предсказуемой.
+SECRET_KEY = env("SECRET_KEY") if not DEBUG else env("SECRET_KEY", default="dev-insecure-change-me")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 # --- Приложения ------------------------------------------------------------
@@ -123,6 +125,12 @@ REST_FRAMEWORK = {
     ],
     # Пагинация отключена: эндпоинты отдают массивы (данных немного, личное
     # приложение). При росте можно вернуть PageNumberPagination.
+    # Ограничение попыток входа/регистрации (защита от перебора пароля).
+    # Счётчики живут в кэше Django (по умолчанию — в памяти процесса).
+    "DEFAULT_THROTTLE_RATES": {
+        "login": env("THROTTLE_LOGIN", default="10/min"),
+        "register": env("THROTTLE_REGISTER", default="10/hour"),
+    },
 }
 
 # --- CORS (React dev server) ----------------------------------------------
