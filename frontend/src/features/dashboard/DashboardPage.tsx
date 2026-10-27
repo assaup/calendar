@@ -6,7 +6,7 @@ import {
   PRIORITY_META,
   type Priority,
 } from '../../store/tasks';
-import { useWorkspaceStore } from '../../store/workspace';
+import { useWorkspaceStore, useWorkspaceScope } from '../../store/workspace';
 import styles from './DashboardPage.module.scss';
 
 const STATUS_COLORS = {
@@ -43,9 +43,10 @@ function StatTile({
 export function DashboardPage() {
   const tasks = useTasksStore((s) => s.tasks);
   const categories = useTasksStore((s) => s.categories);
-  const activeWorkspace = useWorkspaceStore((s) => s.activeId);
+  const workspaces = useWorkspaceStore((s) => s.workspaces);
+  const { isAll, inScope } = useWorkspaceScope();
 
-  const items = tasks.filter((t) => t.workspaceId === activeWorkspace);
+  const items = tasks.filter((t) => inScope(t.workspaceId));
   const total = items.length;
   const done = items.filter((t) => t.status === 'done').length;
   const inProgress = items.filter((t) => t.status === 'in_progress').length;
@@ -59,18 +60,26 @@ export function DashboardPage() {
     { value: done, color: STATUS_COLORS.done, label: 'Готово' },
   ];
 
-  // по категориям (только непустые, по убыванию)
-  const catCounts = categories
-    .map((c) => ({
-      label: c.name,
-      color: c.color,
-      count: items.filter((t) => t.categoryId === c.id).length,
-    }))
-    .concat({
-      label: 'Без категории',
-      color: 'var(--app-text-dim)',
-      count: items.filter((t) => t.categoryId === null).length,
-    })
+  // по категориям (только непустые, по убыванию); в «Все доски» — по доскам
+  const catCounts = (
+    isAll
+      ? workspaces.map((w) => ({
+          label: w.name,
+          color: w.color,
+          count: items.filter((t) => t.workspaceId === w.id).length,
+        }))
+      : categories
+          .map((c) => ({
+            label: c.name,
+            color: c.color,
+            count: items.filter((t) => t.categoryId === c.id).length,
+          }))
+          .concat({
+            label: 'Без категории',
+            color: 'var(--app-text-dim)',
+            count: items.filter((t) => t.categoryId === null).length,
+          })
+  )
     .filter((c) => c.count > 0)
     .sort((a, b) => b.count - a.count);
   const catMax = Math.max(1, ...catCounts.map((c) => c.count));
@@ -85,7 +94,10 @@ export function DashboardPage() {
 
   if (total === 0) {
     return (
-      <PageShell title="Панель" description="Статистика пространства">
+      <PageShell
+        title="Панель"
+        description={isAll ? 'Статистика всех досок' : 'Статистика доски'}
+      >
         <div className={styles.empty}>
           В этом пространстве пока нет задач — добавь их, и здесь появится
           статистика.
@@ -95,7 +107,10 @@ export function DashboardPage() {
   }
 
   return (
-    <PageShell title="Панель" description="Статистика пространства">
+    <PageShell
+      title="Панель"
+      description={isAll ? 'Статистика всех досок' : 'Статистика доски'}
+    >
       <div className={styles.tiles}>
         <StatTile label="Всего задач" value={total} />
         <StatTile
@@ -123,7 +138,9 @@ export function DashboardPage() {
         </div>
 
         <div className={styles.card}>
-          <div className={styles.cardTitle}>По категориям</div>
+          <div className={styles.cardTitle}>
+            {isAll ? 'По доскам' : 'По категориям'}
+          </div>
           <div className={styles.bars}>
             {catCounts.map((c) => (
               <div key={c.label} className={styles.barRow}>

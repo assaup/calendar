@@ -31,7 +31,7 @@ import {
 } from '@tabler/icons-react';
 import dayjs from 'dayjs';
 import { useNotesStore, type Note } from '../../store/notes';
-import { useWorkspaceStore } from '../../store/workspace';
+import { useWorkspaceScope, useWorkspace } from '../../store/workspace';
 import { NoteEditor } from './NoteEditor';
 import styles from './NotesPage.module.scss';
 
@@ -186,7 +186,10 @@ export function NotesPage() {
   const addFolder = useNotesStore((s) => s.addFolder);
   const renameFolder = useNotesStore((s) => s.renameFolder);
   const deleteFolder = useNotesStore((s) => s.deleteFolder);
-  const activeWorkspace = useWorkspaceStore((s) => s.activeId);
+  // заметки и папки у каждой доски свои; в «Все доски» показываем
+  // последнюю выбранную доску
+  const { isAll, targetId: activeWorkspace } = useWorkspaceScope();
+  const homeName = useWorkspace(activeWorkspace)?.name;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [folderFilter, setFolderFilter] = useState<FolderFilter>('all');
@@ -296,7 +299,14 @@ export function NotesPage() {
       {/* Список заметок */}
       <aside className={styles.list}>
         <div className={styles.listHead}>
-          <h2 className={styles.heading}>Заметки</h2>
+          <div>
+            <h2 className={styles.heading}>Заметки</h2>
+            {isAll && homeName && (
+              <div className={styles.headingHint}>
+                Заметки у каждой доски свои — показана «{homeName}»
+              </div>
+            )}
+          </div>
           <ActionIcon
             variant="light"
             size="lg"

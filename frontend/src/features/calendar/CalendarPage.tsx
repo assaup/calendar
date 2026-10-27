@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import dayjs from 'dayjs';
-import { ActionIcon, Button, Title } from '@mantine/core';
+import {
+  ActionIcon,
+  Button,
+  SegmentedControl,
+  Title,
+  Tooltip,
+} from '@mantine/core';
 import {
   IconChevronLeft,
   IconChevronRight,
   IconPlus,
+  IconLayoutList,
+  IconTextWrap,
 } from '@tabler/icons-react';
 import { MonthCalendar } from './MonthCalendar';
 import { useTaskEditor } from '../tasks/taskEditor';
 import { useTasksStore } from '../../store/tasks';
-import { useWorkspaceStore } from '../../store/workspace';
-import { useUiStore } from '../../store/ui';
+import { useWorkspaceScope } from '../../store/workspace';
+import { useUiStore, type CalendarScale } from '../../store/ui';
 import styles from './CalendarPage.module.scss';
 
 function plural(n: number): string {
@@ -26,16 +34,20 @@ export function CalendarPage() {
   const [month, setMonth] = useState(() => dayjs().startOf('month'));
   const openNew = useTaskEditor((s) => s.openNew);
   const tasks = useTasksStore((s) => s.tasks);
-  const activeWorkspace = useWorkspaceStore((s) => s.activeId);
+  const { inScope } = useWorkspaceScope();
   // при свёрнутом меню календарь растягивается во всю ширину
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
+  const fullText = useUiStore((s) => s.calendarFullText);
+  const setFullText = useUiStore((s) => s.setCalendarFullText);
+  const scale = useUiStore((s) => s.calendarScale);
+  const setScale = useUiStore((s) => s.setCalendarScale);
 
   const title = month.format('MMMM YYYY');
   const capitalized = title.charAt(0).toUpperCase() + title.slice(1);
 
   // сколько задач в этом месяце (по датам начала/срока)
   const monthCount = tasks.filter((t) => {
-    if (t.workspaceId !== activeWorkspace) return false;
+    if (!inScope(t.workspaceId)) return false;
     const inMonth = (d: string | null) =>
       !!d && dayjs(d).isSame(month, 'month');
     return inMonth(t.startDate) || inMonth(t.dueDate);
@@ -80,12 +92,80 @@ export function CalendarPage() {
           </div>
         </div>
 
-        <Button
-          leftSection={<IconPlus size={16} />}
-          onClick={() => openNew({ date: dayjs().format('YYYY-MM-DD') })}
-        >
-          Новая задача
-        </Button>
+        <div className={styles.right}>
+          {/* вид карточек: в одну строку или с полным текстом */}
+          <SegmentedControl
+            size="xs"
+            radius="xl"
+            value={fullText ? 'full' : 'short'}
+            onChange={(v) => setFullText(v === 'full')}
+            aria-label="Вид задач"
+            data={[
+              {
+                value: 'short',
+                label: (
+                  <Tooltip label="Кратко: одна строка" withArrow>
+                    <span className={styles.segLabel}>
+                      <IconLayoutList size={15} />
+                      Кратко
+                    </span>
+                  </Tooltip>
+                ),
+              },
+              {
+                value: 'full',
+                label: (
+                  <Tooltip label="Полный текст задачи" withArrow>
+                    <span className={styles.segLabel}>
+                      <IconTextWrap size={15} />
+                      Полностью
+                    </span>
+                  </Tooltip>
+                ),
+              },
+            ]}
+          />
+          {/* размер шрифта задач */}
+          <SegmentedControl
+            size="xs"
+            radius="xl"
+            value={scale}
+            onChange={(v) => setScale(v as CalendarScale)}
+            aria-label="Размер шрифта"
+            data={[
+              {
+                value: 's',
+                label: (
+                  <span className={styles.fontS} title="Мелкий шрифт">
+                    A
+                  </span>
+                ),
+              },
+              {
+                value: 'm',
+                label: (
+                  <span className={styles.fontM} title="Обычный шрифт">
+                    A
+                  </span>
+                ),
+              },
+              {
+                value: 'l',
+                label: (
+                  <span className={styles.fontL} title="Крупный шрифт">
+                    A
+                  </span>
+                ),
+              },
+            ]}
+          />
+          <Button
+            leftSection={<IconPlus size={16} />}
+            onClick={() => openNew({ date: dayjs().format('YYYY-MM-DD') })}
+          >
+            Новая задача
+          </Button>
+        </div>
       </div>
 
       <MonthCalendar month={month} />

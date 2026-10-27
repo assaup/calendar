@@ -14,15 +14,21 @@ import {
 } from '@dnd-kit/core';
 import { IconCheck } from '@tabler/icons-react';
 import { useTasksStore, PRIORITY_META, type Task } from '../../store/tasks';
-import { useWorkspaceStore } from '../../store/workspace';
+import { useWorkspaceScope, useWorkspaceStore } from '../../store/workspace';
+import { useUiStore, type CalendarScale } from '../../store/ui';
 import { useTaskEditor } from '../tasks/taskEditor';
 import { contrastText } from '../../lib/palette';
 import { cardFocus } from '../tasks/cardFocus';
 import styles from './MonthCalendar.module.scss';
 
 const DATE_ROW_H = 34;
-const BAR_H = 28;
 const BAR_GAP = 5;
+// размер текста и высота однострочной карточки для каждого масштаба
+const SCALES: Record<CalendarScale, { font: number; bar: number }> = {
+  s: { font: 12, bar: 24 },
+  m: { font: 13.5, bar: 28 },
+  l: { font: 15.5, bar: 32 },
+};
 const MIN_LANES = 2;
 const ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -137,7 +143,9 @@ function DayCell({
       className={styles.dayCell}
       data-outside={outside || undefined}
       data-over={isOver || undefined}
-      onMouseEnter={() => cardFocus.enterTarget({ startDate: iso, dueDate: iso })}
+      onMouseEnter={() =>
+        cardFocus.enterTarget({ startDate: iso, dueDate: iso })
+      }
       onMouseLeave={cardFocus.leaveTarget}
       onClick={() => onQuickAdd(iso)}
       aria-label="Добавить задачу"
@@ -152,10 +160,13 @@ function DayCell({
 function TaskBar({
   seg,
   color,
+  wsColor,
   onOpen,
 }: {
   seg: Segment;
   color: string | null;
+  /** цвет доски — показываем метку в режиме «Все доски» */
+  wsColor?: string;
   onOpen: (id: string) => void;
 }) {
   const toggleDone = useTasksStore((s) => s.toggleDone);
@@ -186,10 +197,9 @@ function TaskBar({
       data-prio={seg.task.priority || undefined}
       data-plain={!color || undefined}
       style={{
-        top: DATE_ROW_H + seg.lane * (BAR_H + BAR_GAP),
-        left: `calc(${(seg.colStart / 7) * 100}% + 4px)`,
-        width: `calc(${(span / 7) * 100}% - 8px)`,
-        height: BAR_H,
+        // строка 1 сетки — номера дней, дорожки задач начинаются со 2-й
+        gridRow: seg.lane + 2,
+        gridColumn: `${seg.colStart + 1} / span ${span}`,
         // без категории цвет задаёт тема через CSS
         ...(color ? { background: color, color: contrastText(color) } : {}),
         ...(seg.task.priority
@@ -222,7 +232,16 @@ function TaskBar({
       >
         {done && <IconCheck size={12} stroke={3.5} />}
       </button>
-      <span className={styles.barTitle}>{seg.task.title}</span>
+      {wsColor && (
+        <span
+          className={styles.barWs}
+          style={{ background: wsColor }}
+          aria-hidden
+        />
+      )}
+      <span className={styles.barTitle} title={seg.task.title}>
+        {seg.task.title}
+      </span>
     </div>
   );
 }
@@ -233,7 +252,10 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
   const addTask = useTasksStore((s) => s.addTask);
   const updateTask = useTasksStore((s) => s.updateTask);
   const moveTask = useTasksStore((s) => s.moveTask);
-  const activeWorkspace = useWorkspaceStore((s) => s.activeId);
+  const workspaces = useWorkspaceStore((s) => s.workspaces);
+  const { isAll, targetId } = useWorkspaceScope();
+  const fullText = useUiStore((s) => s.calendarFullText);
+  const scale = SCALES[useUiStore((s) => s.calendarScale)];
   const openEdit = useTaskEditor((s) => s.openEdit);
 
   const [quickDate, setQuickDate] = useState<string | null>(null);
@@ -245,8 +267,8 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
   );
 
   const visibleTasks = useMemo(
-    () => tasks.filter((t) => t.workspaceId === activeWorkspace),
-    [tasks, activeWorkspace],
+    () => tasks.filter((t) => isAll || t.workspaceId === targetId),
+    [tasks, isAll, targetId],
   );
 
   const weeks = useMemo(
@@ -270,7 +292,7 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
     const title = quickText.trim();
     if (title && quickDate) {
       void addTask({
-        workspaceId: activeWorkspace,
+        workspaceId: targetId,
         title,
         startDate: quickDate,
         dueDate: quickDate,
@@ -326,7 +348,16 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
-      <div className={styles.calendar}>
+      <div
+        className={styles.calendar}
+        data-full={fullText || undefined}
+        style={{
+          ['--bar-h' as string]: `${scale.bar}px`,
+          ['--bar-font' as string]: `${scale.font}px`,
+          ['--bar-gap' as string]: `${BAR_GAP}px`,
+          ['--date-row' as string]: `${DATE_ROW_H - BAR_GAP}px`,
+        }}
+      >
         <div className={styles.weekdays}>
           {WEEKDAYS.map((d) => (
             <div key={d} className={styles.weekday}>
@@ -340,11 +371,13 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
             const quickCol = week.days.findIndex(
               (d) => d.format('YYYY-MM-DD') === quickDate,
             );
+            // минимальная высота недели; в режиме «полный текст» неделя
+            // растёт дальше сама — карточки лежат в сетке, а не абсолютно
             const rowHeight =
               DATE_ROW_H +
-              week.lanes * (BAR_H + BAR_GAP) +
+              week.lanes * (scale.bar + BAR_GAP) +
               BAR_GAP +
-              (quickCol !== -1 ? BAR_H + BAR_GAP : 0);
+              (quickCol !== -1 ? scale.bar + BAR_GAP : 0);
 
             return (
               <div
@@ -374,6 +407,13 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
                       key={seg.task.id}
                       seg={seg}
                       color={catColor(seg.task.categoryId)}
+                      wsColor={
+                        isAll
+                          ? workspaces.find(
+                              (w) => w.id === seg.task.workspaceId,
+                            )?.color
+                          : undefined
+                      }
                       onOpen={openEdit}
                     />
                   ))}
@@ -382,9 +422,8 @@ export function MonthCalendar({ month }: { month: Dayjs }) {
                     <input
                       className={styles.quickInput}
                       style={{
-                        top: DATE_ROW_H + week.lanes * (BAR_H + BAR_GAP),
-                        left: `calc(${(quickCol / 7) * 100}% + 4px)`,
-                        width: `calc(${(1 / 7) * 100}% - 8px)`,
+                        gridRow: week.lanes + 2,
+                        gridColumn: quickCol + 1,
                       }}
                       // eslint-disable-next-line jsx-a11y/no-autofocus
                       autoFocus

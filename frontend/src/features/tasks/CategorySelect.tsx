@@ -15,26 +15,23 @@ import {
 import { modals } from '@mantine/modals';
 import { IconSettings, IconTrash, IconPencil } from '@tabler/icons-react';
 import { useTasksStore, type Category } from '../../store/tasks';
-import { useWorkspaceStore } from '../../store/workspace';
 import { ColorSwatchPicker } from '../../components/ui/ColorSwatchPicker';
 import { PALETTE_VALUES } from '../../lib/palette';
 
 interface Props {
+  /** доска задачи — категории у каждой доски свои */
+  workspaceId: string;
   value: string | null;
   onChange: (id: string | null) => void;
 }
 
-export function CategorySelect({ value, onChange }: Props) {
+export function CategorySelect({ workspaceId, value, onChange }: Props) {
   const allCategories = useTasksStore((s) => s.categories);
   const addCategory = useTasksStore((s) => s.addCategory);
   const updateCategory = useTasksStore((s) => s.updateCategory);
   const deleteCategory = useTasksStore((s) => s.deleteCategory);
-  const activeWorkspaceId = useWorkspaceStore((s) => s.activeId);
-
   // категории принадлежат конкретной доске
-  const categories = allCategories.filter(
-    (c) => c.workspaceId === activeWorkspaceId,
-  );
+  const categories = allCategories.filter((c) => c.workspaceId === workspaceId);
 
   const [manageOpen, setManageOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -61,7 +58,7 @@ export function CategorySelect({ value, onChange }: Props) {
     if (editingId) {
       await updateCategory(editingId, { name: trimmed, color });
     } else {
-      const id = await addCategory(trimmed, color, activeWorkspaceId);
+      const id = await addCategory(trimmed, color, workspaceId);
       onChange(id);
     }
     resetForm();
@@ -207,7 +204,11 @@ export function CategorySelect({ value, onChange }: Props) {
           />
           <ColorSwatchPicker label="Цвет" value={color} onChange={setColor} />
           <Group gap="xs">
-            <Button onClick={submit} disabled={!name.trim()} style={{ flex: 1 }}>
+            <Button
+              onClick={submit}
+              disabled={!name.trim()}
+              style={{ flex: 1 }}
+            >
               {editingId ? 'Сохранить' : 'Добавить категорию'}
             </Button>
             {editingId && (

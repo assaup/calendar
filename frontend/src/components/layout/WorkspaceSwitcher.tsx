@@ -15,8 +15,13 @@ import {
   IconPlus,
   IconTrash,
   IconPencil,
+  IconStack2,
 } from '@tabler/icons-react';
-import { useWorkspaceStore, type Workspace } from '../../store/workspace';
+import {
+  useWorkspaceStore,
+  ALL_WORKSPACES,
+  type Workspace,
+} from '../../store/workspace';
 import { ColorSwatchPicker } from '../ui/ColorSwatchPicker';
 import { PALETTE_VALUES } from '../../lib/palette';
 import styles from './WorkspaceSwitcher.module.scss';
@@ -30,6 +35,7 @@ export function WorkspaceSwitcher() {
     updateWorkspace,
     deleteWorkspace,
   } = useWorkspaceStore();
+  const isAll = activeId === ALL_WORKSPACES;
   const active = workspaces.find((w) => w.id === activeId) ?? workspaces[0];
 
   // null = модалка закрыта; 'new' = создание; Workspace = редактирование
@@ -66,19 +72,31 @@ export function WorkspaceSwitcher() {
       <Menu shadow="md" width={300} position="bottom-start">
         <Menu.Target>
           <UnstyledButton className={styles.trigger} aria-label="Доска">
-            <span
-              className={styles.dot}
-              style={{ background: active.color }}
-              aria-hidden
-            />
+            {isAll ? (
+              <IconStack2 size={16} className={styles.allIcon} aria-hidden />
+            ) : (
+              <span
+                className={styles.dot}
+                style={{ background: active.color }}
+                aria-hidden
+              />
+            )}
             <Text fw={600} size="md" className={styles.triggerName} truncate>
-              {active.name}
+              {isAll ? 'Все доски' : active.name}
             </Text>
             <IconChevronDown size={18} className={styles.chevron} />
           </UnstyledButton>
         </Menu.Target>
 
         <Menu.Dropdown>
+          <Menu.Item
+            onClick={() => setActive(ALL_WORKSPACES)}
+            leftSection={<IconStack2 size={16} className={styles.allIcon} />}
+            rightSection={isAll && <IconCheck size={16} />}
+          >
+            Все доски
+          </Menu.Item>
+          <Menu.Divider />
           <Menu.Label>Доски</Menu.Label>
           {workspaces.map((w) => (
             <Menu.Item
@@ -89,7 +107,7 @@ export function WorkspaceSwitcher() {
               }
               rightSection={
                 <span className={styles.itemRight}>
-                  {w.id === active.id && <IconCheck size={16} />}
+                  {w.id === activeId && <IconCheck size={16} />}
                   <ActionIcon
                     component="div"
                     variant="subtle"
