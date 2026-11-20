@@ -96,21 +96,12 @@ docker compose -f docker-compose.local.yml up -d --build
 кнопками ▶/⏹. Пересобирать (`--build`) нужно только после изменений кода.
 `restart: unless-stopped` поднимает контейнеры автоматически при старте Docker Desktop.
 
-### Данные и бэкап
+### Данные
 
 Данные лежат в томе Docker `calendar_planner-localdata`. Пересборка и перезапуск
 их не трогают; удаляет данные только `docker compose ... down -v` (флаг `-v`).
 Имя проекта (`name: calendar`) и тома менять нельзя — иначе приложение
 откроется с пустой базой.
-
-```bash
-# бэкап
-docker exec calendar-db-1 pg_dump -U planner planner > backup.sql
-# восстановление в чистую базу
-docker exec -i calendar-db-1 psql -U planner planner < backup.sql
-```
-
-Дампы (`*.sql`) в git не попадают — храни их вне репозитория.
 
 ## Запуск для разработки
 
@@ -165,24 +156,3 @@ npm run e2e
 
 Локально e2e использует установленный Chrome; без него —
 `npx playwright install chromium`. Всё это же запускает CI на каждый PR.
-
-## Развёртывание на сервере (необязательно)
-
-Сейчас приложение живёт локально. Для сервера в репозитории остались
-`docker-compose.prod.yml` (Postgres + Django/gunicorn + фронт на nginx) и оверлей
-`docker-compose.https.yml` с Caddy (автоматический HTTPS от Let's Encrypt).
-
-1. Рядом с `docker-compose.prod.yml` создай `.env` с прод-значениями
-   (см. блок PRODUCTION в `backend/.env.example`): `SECRET_KEY` (обязателен —
-   без него бэкенд не стартует), `POSTGRES_PASSWORD`, `ALLOWED_HOSTS`,
-   `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`.
-2. В `Caddyfile` укажи свой домен вместо `example.com`.
-3. Запуск:
-
-```bash
-docker compose -f docker-compose.prod.yml -f docker-compose.https.yml up -d --build
-```
-
-Открытые порты: 80 и 443 (Caddy). Цепочка: Caddy → nginx (фронт, `/api`,
-`/admin`) → Django; `X-Forwarded-Proto` пробрасывается, поэтому редирект на
-https не зацикливается.
