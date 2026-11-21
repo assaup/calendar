@@ -1,8 +1,18 @@
-# Прод-образ бэкенда (Django + gunicorn).
+FROM python:3.11-slim AS builder
+
+RUN python -m venv --without-pip /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements.txt .
+RUN pip --python /opt/venv/bin/python install --no-cache-dir -r requirements.txt
+
+
+
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
 RUN groupadd -g 1000 appgroup \
@@ -12,8 +22,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY --from=builder /opt/venv /opt/venv
 
 COPY . .
 
