@@ -1,4 +1,5 @@
 FROM python:3.11-slim AS builder
+WORKDIR /build
 
 RUN python -m venv --without-pip /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
@@ -18,6 +19,8 @@ WORKDIR /app
 RUN groupadd -g 1000 appgroup \
     && useradd -u 1000 -g appgroup --no-create-home --shell /usr/sbin/nologin appuser
 
+# версии apt не фиксируем: Debian удаляет старые из репозитория, сборка сломается
+# hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq5 \
     && rm -rf /var/lib/apt/lists/*
@@ -29,8 +32,10 @@ COPY . .
 # Собираем статику админки (БД не нужна)
 RUN SECRET_KEY=build DEBUG=False python manage.py collectstatic --noinput
 
-USER appuser
+USER 1000:1000
 EXPOSE 8000
 
-# Только сервер. Миграции запускает отдельный сервис migrate в compose
+HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=3 \
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/', timeout=2)"]
+
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

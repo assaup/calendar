@@ -29,6 +29,8 @@ services:
       DEBUG: "False"
       SECRET_KEY: "local-dev-not-secret"
       DATABASE_URL: postgres://planner:planner@db:5432/planner
+    healthcheck:
+      disable: true
 
   backend:
     build: ./backend
@@ -53,10 +55,10 @@ services:
     build: ./frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     # 8080 занят EnterpriseDB (Apache), поэтому фронт на 3000
     ports:
       - "3000:80"
-
 volumes:
   planner-localdata:
