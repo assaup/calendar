@@ -6,6 +6,15 @@ on:
   pull_request:
 
 jobs:
+  docker-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # версия закреплена такой же, как у тебя локально (hadolint --version → 2.15.1)
+      - run: >
+          docker run --rm -v "$PWD:/w" -w /w hadolint/hadolint:v2.15.1
+          hadolint backend/Dockerfile frontend/Dockerfile
+          
   frontend:
     runs-on: ubuntu-latest
     defaults:
