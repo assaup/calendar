@@ -32,5 +32,5 @@ RUN SECRET_KEY=build DEBUG=False python manage.py collectstatic --noinput
 USER appuser
 EXPOSE 8000
 
-# Миграции при старте, затем gunicorn
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3"]
+# Только сервер. Миграции запускает отдельный сервис migrate в compose
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
