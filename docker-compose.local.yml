@@ -1,13 +1,4 @@
-# Локальный запуск всего проекта «в одну кнопку» (БД + бэкенд + фронт).
-# Никаких .env и настроек не нужно — все значения уже вшиты для локалки.
-#
-# Первый запуск (собрать образы):
-#   docker compose -f docker-compose.local.yml up -d --build
-# Дальше — просто кнопка ▶ у проекта в Docker Desktop (пересборка не нужна,
-# пока не менял код). Сайт: http://localhost:3000
-# Имя проекта закреплено: твои локальные данные лежат в томе
-# calendar_planner-localdata, и менять его нельзя, иначе приложение
-# запустится с пустой базой.
+
 name: calendar
 
 services:
@@ -26,12 +17,28 @@ services:
       timeout: 5s
       retries: 5
 
-  backend:
+  migrate:
     build: ./backend
-    restart: unless-stopped
+    image: calendar-backend
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    restart: "no"   # отработал и вышел — перезапускать не надо
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      DEBUG: "False"
+      SECRET_KEY: "local-dev-not-secret"
+      DATABASE_URL: postgres://planner:planner@db:5432/planner
+    healthcheck:
+      disable: true
+
+  backend:
+    build: ./backend
+    image: calendar-backend
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     environment:
       DEBUG: "False"
       SECRET_KEY: "local-dev-not-secret"
@@ -48,10 +55,10 @@ services:
     build: ./frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     # 8080 занят EnterpriseDB (Apache), поэтому фронт на 3000
     ports:
       - "3000:80"
-
 volumes:
   planner-localdata:
