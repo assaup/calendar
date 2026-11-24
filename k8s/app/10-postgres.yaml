@@ -1,0 +1,72 @@
+# shortcut: пароль в git, годится только для локального кластера; на этапе 8 — sops
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres
+  namespace: calendar
+type: Opaque
+stringData:
+  POSTGRES_USER: planner
+  POSTGRES_PASSWORD: planner
+  POSTGRES_DB: planner
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db  # как в compose
+  namespace: calendar
+spec:
+  clusterIP: None  # headless
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: calendar
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          envFrom:
+            - secretRef:
+                name: postgres
+          ports:
+            - name: postgres
+              containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "planner"]
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  # у local-path reclaimPolicy: Delete — удалишь PVC, пропадут данные
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

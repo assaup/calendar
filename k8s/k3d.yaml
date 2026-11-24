@@ -1,0 +1,16 @@
+# k3d cluster create --config k8s/k3d.yaml
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: calendar
+servers: 1
+agents: 0
+kubeAPI:
+  # с host.docker.internal kubectl не подключался: в hosts старый IP
+  host: 127.0.0.1
+  hostIP: 127.0.0.1
+  hostPort: "6550"
+ports:
+  - port: 127.0.0.1:8088:80  # 8080 занят, 3000 у compose
+    nodeFilters:
+      - loadbalancer
