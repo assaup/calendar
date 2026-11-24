@@ -28,12 +28,18 @@ spec:
       labels:
         {{- include "calendar.labels" $ctx | nindent 8 }}
     spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: frontend
           image: {{ include "calendar.image" $ctx }}
           ports:
             - name: http
               containerPort: 80
+          # shortcut: nginx стартует от root (порт 80); для drop ALL и runAsNonRoot нужен nginx-unprivileged
+          securityContext:
+            allowPrivilegeEscalation: false
           readinessProbe:
             httpGet:
               path: /
@@ -44,5 +50,9 @@ spec:
               path: /
               port: http
             periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
           resources:
             {{- toYaml .Values.frontend.resources | nindent 12 }}

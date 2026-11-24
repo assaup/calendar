@@ -17,9 +17,23 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: calendar
+  # репликами бэкенда рулит HPA — не спорю с ним
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: backend
+      jsonPointers:
+        - /spec/replicas
   syncPolicy:
     automated:
       prune: true     # удалил из git — удалится из кластера
       selfHeal: true  # поправили руками — вернёт как в git
     syncOptions:
       - CreateNamespace=true
+      - RespectIgnoreDifferences=true  # иначе при синке всё равно перезапишет replicas
+    retry:  # упала миграция (например, база перезапускалась) — повторить тот же коммит
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

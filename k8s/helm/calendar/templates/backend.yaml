@@ -1,5 +1,6 @@
 {{- $ctx := dict "root" $ "component" "backend" }}
-{{- $probeHost := .Values.backend.env.ALLOWED_HOSTS | splitList "," | first }}
+{{- $probeHost := .Values.backend.probeHost | default (.Values.backend.env.ALLOWED_HOSTS | splitList "," | first) }}
+{{- if eq $probeHost "*" }}{{ $probeHost = "localhost" }}{{ end }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -22,9 +23,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"  # после миграций
 spec:
-  {{- if not .Values.backend.autoscaling.enabled }}
-  replicas: {{ .Values.backend.replicas }}
-  {{- end }}
+  # поле есть всегда: если его убрать, Kubernetes сбросит до 1. С HPA Argo CD его не трогает (ignoreDifferences)
+  replicas: {{ ternary .Values.backend.autoscaling.minReplicas .Values.backend.replicas .Values.backend.autoscaling.enabled }}
   selector:
     matchLabels:
       {{- include "calendar.selectorLabels" $ctx | nindent 6 }}
@@ -38,6 +38,8 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: backend
           image: {{ include "calendar.image" $ctx }}
@@ -46,14 +48,20 @@ spec:
           ports:
             - name: http
               containerPort: 8000
-          # kubelet шлёт Host = IP пода, Django его не пропустит
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          # Host = IP пода Django не пропустит; без X-Forwarded-Proto в проде будет 301 на https вместо проверки
           readinessProbe:
             httpGet:
               path: /api/health/
               port: http
               httpHeaders:
                 - name: Host
-                  value: {{ $probeHost }}
+                  value: {{ $probeHost | quote }}
+                - name: X-Forwarded-Proto
+                  value: https
             periodSeconds: 5
           livenessProbe:
             httpGet:
@@ -61,8 +69,14 @@ spec:
               port: http
               httpHeaders:
                 - name: Host
-                  value: {{ $probeHost }}
+                  value: {{ $probeHost | quote }}
+                - name: X-Forwarded-Proto
+                  value: https
             initialDelaySeconds: 10
             periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]  # пока Ingress убирает под из балансировки
           resources:
             {{- toYaml .Values.backend.resources | nindent 12 }}

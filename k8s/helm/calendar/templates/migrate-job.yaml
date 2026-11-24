@@ -17,6 +17,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   backoffLimit: 4
+  activeDeadlineSeconds: 300  # зависшая миграция не держит выкладку вечно
   template:
     metadata:
       labels:
@@ -25,9 +26,17 @@ spec:
       restartPolicy: Never
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: migrate
           image: {{ include "calendar.image" (dict "root" $ "component" "backend") }}
           command: ["python", "manage.py", "migrate", "--noinput"]
           envFrom:
             {{- include "calendar.backendEnvFrom" . | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
