@@ -19,11 +19,13 @@ WORKDIR /app
 RUN groupadd -g 1000 appgroup \
     && useradd -u 1000 -g appgroup --no-create-home --shell /usr/sbin/nologin appuser
 
+# pip и setuptools в рантайме не нужны, удаляю: меньше пакетов — меньше CVE
 # версии apt не фиксируем: Debian удаляет старые из репозитория, сборка сломается
 # hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq5 \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && python -m pip uninstall -y --no-cache-dir setuptools pip
 
 COPY --from=builder /opt/venv /opt/venv
 
