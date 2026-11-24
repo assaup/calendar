@@ -14,7 +14,7 @@ ingress:
 backend:
   replicas: 2  # если autoscaling выключен
   autoscaling:
-    enabled: false
+    enabled: true
     minReplicas: 2
     maxReplicas: 5
     targetCPU: 70
