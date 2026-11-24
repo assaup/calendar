@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: calendar
+  labels:
+    {{- include "calendar.labels" (dict "root" $ "component" "ingress") | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- with .Values.ingress.tlsSecret }}
+  tls:
+    - hosts:
+        - {{ required "для TLS нужен ingress.host" $.Values.ingress.host }}
+      secretName: {{ . }}
+  {{- end }}
+  rules:
+    - http:
+        paths:
+          # API и админку — сразу на бэкенд, остальное — фронту
+          {{- range list "/api" "/admin" "/static" }}
+          - path: {{ . }}
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  name: http
+          {{- end }}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  name: http
+      {{- with .Values.ingress.host }}
+      host: {{ . }}
+      {{- end }}

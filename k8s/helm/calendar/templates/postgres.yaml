@@ -1,24 +1,27 @@
-# shortcut: пароль в git, годится только для локального кластера; на этапе 8 — sops
+{{- if .Values.postgres.enabled }}
+{{- $ctx := dict "root" $ "component" "postgres" }}
 apiVersion: v1
 kind: Secret
 metadata:
   name: postgres
-  namespace: calendar
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
 type: Opaque
 stringData:
-  POSTGRES_USER: planner
-  POSTGRES_PASSWORD: planner
-  POSTGRES_DB: planner
+  POSTGRES_USER: {{ .Values.postgres.user | quote }}
+  POSTGRES_PASSWORD: {{ .Values.postgres.password | quote }}
+  POSTGRES_DB: {{ .Values.postgres.database | quote }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: db  # как в compose
-  namespace: calendar
+  name: db
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
 spec:
   clusterIP: None  # headless
   selector:
-    app: postgres
+    {{- include "calendar.selectorLabels" $ctx | nindent 4 }}
   ports:
     - name: postgres
       port: 5432
@@ -27,21 +30,22 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  namespace: calendar
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
 spec:
   serviceName: db
   replicas: 1
   selector:
     matchLabels:
-      app: postgres
+      {{- include "calendar.selectorLabels" $ctx | nindent 6 }}
   template:
     metadata:
       labels:
-        app: postgres
+        {{- include "calendar.labels" $ctx | nindent 8 }}
     spec:
       containers:
         - name: postgres
-          image: postgres:16-alpine
+          image: {{ .Values.postgres.image }}
           envFrom:
             - secretRef:
                 name: postgres
@@ -50,14 +54,10 @@ spec:
               containerPort: 5432
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "planner"]
+              command: ["pg_isready", "-U", {{ .Values.postgres.user | quote }}]
             periodSeconds: 5
           resources:
-            requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              memory: 512Mi
+            {{- toYaml .Values.postgres.resources | nindent 12 }}
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
@@ -69,4 +69,5 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 1Gi
+            storage: {{ .Values.postgres.storage }}
+{{- end }}

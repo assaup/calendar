@@ -1,0 +1,28 @@
+{{- $ctx := dict "root" $ "component" "migrate" }}
+# post-install: при первой установке базы ещё нет, pre-install упал бы
+# pre-upgrade: при обновлении схема меняется до того, как поедут новые поды
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation  # оставляю последнюю Job, чтобы смотреть логи
+spec:
+  backoffLimit: 4
+  template:
+    metadata:
+      labels:
+        {{- include "calendar.labels" $ctx | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: migrate
+          image: {{ include "calendar.image" (dict "root" $ "component" "backend") }}
+          command: ["python", "manage.py", "migrate", "--noinput"]
+          envFrom:
+            {{- include "calendar.backendEnvFrom" . | nindent 12 }}
