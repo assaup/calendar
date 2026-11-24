@@ -1,0 +1,25 @@
+# kubectl apply -f k8s/argocd/calendar-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: calendar
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/assaup/calendar.git
+    targetRevision: devops/stage-3-k8s  # после мержа — main
+    path: k8s/helm/calendar
+    helm:
+      releaseName: calendar
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: calendar
+  syncPolicy:
+    automated:
+      prune: true     # удалил из git — удалится из кластера
+      selfHeal: true  # поправили руками — вернёт как в git
+    syncOptions:
+      - CreateNamespace=true

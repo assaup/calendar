@@ -1,0 +1,8 @@
+# helm upgrade --install argocd argo/argo-cd -n argocd --create-namespace --version 10.19.0 -f k8s/argocd/values.yaml
+configs:
+  params:
+    server.insecure: true  # локально без TLS, UI через port-forward
+dex:
+  enabled: false  # вход только admin, SSO не нужен
+notifications:
+  enabled: false  # алерты будут на этапе 6
