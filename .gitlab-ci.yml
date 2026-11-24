@@ -1,0 +1,116 @@
+# То же, что в .github/workflows/ci.yml, только для GitLab.
+# shortcut: e2e не перенесён — нужен образ playwright вместе с python; перенесу, если репо переедет в GitLab.
+# Не запускал: репо на GitHub. Проверить можно в Pipeline editor → Validate или на зеркале в gitlab.com.
+
+stages: [lint, test, build, scan, release]
+
+# чтобы на один коммит не запускалось два пайплайна (ветка и MR)
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+docker-lint:
+  stage: lint
+  image: hadolint/hadolint:v2.15.1-debian   # -debian: в обычном образе нет shell, а GitLab запускает скрипты через sh
+  script:
+    - hadolint backend/Dockerfile frontend/Dockerfile
+
+frontend:
+  stage: test
+  image: node:22
+  cache:
+    key: { files: [frontend/package-lock.json] }
+    paths: [frontend/.npm]
+  before_script:
+    - cd frontend
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm run typecheck
+    - npm run lint
+    - npm test
+    - npm run build
+
+backend:
+  stage: test
+  image: python:3.11
+  services:
+    - name: postgres:16-alpine
+      alias: postgres                       # по этому имени бэкенд видит БД
+  variables:
+    POSTGRES_USER: planner
+    POSTGRES_PASSWORD: planner
+    POSTGRES_DB: planner
+    SECRET_KEY: ci-secret
+    DEBUG: "True"
+    DATABASE_URL: postgres://planner:planner@postgres:5432/planner
+    PIP_CACHE_DIR: $CI_PROJECT_DIR/.pip
+  cache:
+    key: { files: [backend/requirements.txt, backend/requirements-dev.txt] }
+    paths: [.pip]
+  before_script:
+    - cd backend
+  script:
+    - pip install -r requirements.txt -r requirements-dev.txt
+    - ruff check apps config
+    - python manage.py check
+    - python manage.py makemigrations --check --dry-run
+    - python manage.py test
+
+# общее для job'ов с Docker; dind — отдельный контейнер с демоном Docker
+.docker:
+  image: docker:27
+  services: [docker:27-dind]
+  variables:
+    DOCKER_TLS_CERTDIR: /certs
+    IMAGE: $CI_REGISTRY_IMAGE/$SERVICE      # registry.gitlab.com/<группа>/<проект>/backend
+    SHA_TAG: sha-$CI_COMMIT_SHORT_SHA
+  parallel:
+    matrix:
+      - SERVICE: [backend, frontend]
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+
+# собираем и сразу пушим под sha-тегом: его проверит Trivy, а release потом добавит теги
+build:
+  extends: .docker
+  stage: build
+  script:
+    - docker pull "$IMAGE:latest" || true    # кэш из прошлой сборки; при первом запуске его ещё нет
+    - >
+      docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1
+      --cache-from "$IMAGE:latest" -t "$IMAGE:$SHA_TAG" "./$SERVICE"
+    - docker push "$IMAGE:$SHA_TAG"
+
+trivy:
+  stage: scan
+  image:
+    name: aquasec/trivy:0.58.1
+    entrypoint: [""]                         # у образа entrypoint = trivy, а GitLab нужен shell
+  parallel:
+    matrix:
+      - SERVICE: [backend, frontend]
+  variables:
+    TRIVY_USERNAME: $CI_REGISTRY_USER        # Trivy сам тянет образ из реестра, ему нужен логин
+    TRIVY_PASSWORD: $CI_REGISTRY_PASSWORD
+  script:
+    - >
+      trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1
+      "$CI_REGISTRY_IMAGE/$SERVICE:sha-$CI_COMMIT_SHORT_SHA"
+
+# публикуем тот же образ, что просканировали: просто добавляем теги
+release:
+  extends: .docker
+  stage: release
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG =~ /^v\d/
+  script:
+    - docker pull "$IMAGE:$SHA_TAG"
+    - |
+      if [ -n "$CI_COMMIT_TAG" ]; then NEW_TAG="${CI_COMMIT_TAG#v}"; else NEW_TAG=latest; fi
+      docker tag "$IMAGE:$SHA_TAG" "$IMAGE:$NEW_TAG"
+      docker push "$IMAGE:$NEW_TAG"
