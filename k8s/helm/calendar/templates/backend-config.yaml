@@ -1,0 +1,24 @@
+{{- $ctx := dict "root" $ "component" "backend" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
+data:
+  {{- range $k, $v := .Values.backend.env }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}
+{{- if not .Values.backend.existingSecret }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
+type: Opaque
+stringData:
+  SECRET_KEY: {{ required "нужен backend.secretKey" .Values.backend.secretKey | quote }}
+  DATABASE_URL: {{ include "calendar.databaseUrl" . | quote }}
+{{- end }}

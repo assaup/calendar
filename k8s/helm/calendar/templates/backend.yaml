@@ -1,0 +1,82 @@
+{{- $ctx := dict "root" $ "component" "backend" }}
+{{- $probeHost := .Values.backend.probeHost | default (.Values.backend.env.ALLOWED_HOSTS | splitList "," | first) }}
+{{- if eq $probeHost "*" }}{{ $probeHost = "localhost" }}{{ end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend  # на это имя смотрит nginx фронта
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
+spec:
+  selector:
+    {{- include "calendar.selectorLabels" $ctx | nindent 4 }}
+  ports:
+    - name: http
+      port: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"  # после миграций
+spec:
+  # поле есть всегда: если его убрать, Kubernetes сбросит до 1. С HPA Argo CD его не трогает (ignoreDifferences)
+  replicas: {{ ternary .Values.backend.autoscaling.minReplicas .Values.backend.replicas .Values.backend.autoscaling.enabled }}
+  selector:
+    matchLabels:
+      {{- include "calendar.selectorLabels" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "calendar.labels" $ctx | nindent 8 }}
+      annotations:
+        # конфиг поменялся — поды перезапустятся
+        checksum/config: {{ include (print $.Template.BasePath "/backend-config.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backend
+          image: {{ include "calendar.image" $ctx }}
+          envFrom:
+            {{- include "calendar.backendEnvFrom" . | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8000
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          # Host = IP пода Django не пропустит; без X-Forwarded-Proto в проде будет 301 на https вместо проверки
+          readinessProbe:
+            httpGet:
+              path: /api/health/
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: {{ $probeHost | quote }}
+                - name: X-Forwarded-Proto
+                  value: https
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health/
+              port: http
+              httpHeaders:
+                - name: Host
+                  value: {{ $probeHost | quote }}
+                - name: X-Forwarded-Proto
+                  value: https
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]  # пока Ingress убирает под из балансировки
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}

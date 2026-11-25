@@ -1,0 +1,6 @@
+apiVersion: v2
+name: calendar
+description: Планер — Django API, React-фронт и Postgres
+type: application
+version: 0.1.0
+appVersion: "sha-3f0ffa0"  # тег образов по умолчанию

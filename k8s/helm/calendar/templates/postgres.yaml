@@ -1,0 +1,73 @@
+{{- if .Values.postgres.enabled }}
+{{- $ctx := dict "root" $ "component" "postgres" }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
+type: Opaque
+stringData:
+  POSTGRES_USER: {{ .Values.postgres.user | quote }}
+  POSTGRES_PASSWORD: {{ .Values.postgres.password | quote }}
+  POSTGRES_DB: {{ .Values.postgres.database | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
+spec:
+  clusterIP: None  # headless
+  selector:
+    {{- include "calendar.selectorLabels" $ctx | nindent 4 }}
+  ports:
+    - name: postgres
+      port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "calendar.selectorLabels" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "calendar.labels" $ctx | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image | quote }}
+          envFrom:
+            - secretRef:
+                name: postgres
+          ports:
+            - name: postgres
+              containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", {{ .Values.postgres.user | quote }}]
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.postgres.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  # у local-path reclaimPolicy: Delete — удалишь PVC, пропадут данные
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.postgres.storage }}
+{{- end }}

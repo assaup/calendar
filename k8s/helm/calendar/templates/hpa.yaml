@@ -1,0 +1,26 @@
+{{- with .Values.backend.autoscaling }}
+{{- if .enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend
+  labels:
+    {{- include "calendar.labels" (dict "root" $ "component" "backend") | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"  # вместе с бэкендом, иначе без цели HPA не станет healthy
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  minReplicas: {{ .minReplicas }}
+  maxReplicas: {{ .maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .targetCPU }}  # процент от requests.cpu
+{{- end }}
+{{- end }}

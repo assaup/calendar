@@ -1,0 +1,6 @@
+{{- if .Values.ingress.host }}
+Открыть: http{{ if .Values.ingress.tlsSecret }}s{{ end }}://{{ .Values.ingress.host }}
+{{- else }}
+Открыть: http://localhost:8088 (порт из k8s/k3d.yaml)
+{{- end }}
+Логи миграций: kubectl logs -n {{ .Release.Namespace }} job/migrate

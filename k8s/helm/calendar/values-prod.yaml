@@ -1,0 +1,39 @@
+# Пример для прода, поверх values.yaml:
+# helm upgrade --install calendar k8s/helm/calendar -n calendar -f k8s/helm/calendar/values-prod.yaml
+# Сервера пока нет — проверяю только helm template.
+
+image:
+  tag: sha-3f0ffa0  # в проде тег всегда явно
+
+ingress:
+  className: nginx
+  host: calendar.example.com
+  tlsSecret: calendar-tls
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+
+backend:
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 10
+  resources:
+    requests:
+      cpu: 250m
+      memory: 384Mi
+    limits:
+      memory: 768Mi
+  env:
+    ALLOWED_HOSTS: "calendar.example.com"
+    CORS_ALLOWED_ORIGINS: "https://calendar.example.com"
+    CSRF_TRUSTED_ORIGINS: "https://calendar.example.com"
+    SECURE_SSL_REDIRECT: "True"
+    SESSION_COOKIE_SECURE: "True"
+    CSRF_COOKIE_SECURE: "True"
+  secretKey: ""
+  existingSecret: backend-prod  # кладётся отдельно (sealed-secrets / sops, этап 8)
+
+frontend:
+  replicas: 3
+
+postgres:
+  enabled: false  # управляемая база, адрес в existingSecret

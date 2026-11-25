@@ -1,0 +1,58 @@
+{{- $ctx := dict "root" $ "component" "frontend" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
+spec:
+  selector:
+    {{- include "calendar.selectorLabels" $ctx | nindent 4 }}
+  ports:
+    - name: http
+      port: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    {{- include "calendar.labels" $ctx | nindent 4 }}
+spec:
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels:
+      {{- include "calendar.selectorLabels" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "calendar.labels" $ctx | nindent 8 }}
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: frontend
+          image: {{ include "calendar.image" $ctx }}
+          ports:
+            - name: http
+              containerPort: 80
+          # shortcut: nginx стартует от root (порт 80); для drop ALL и runAsNonRoot нужен nginx-unprivileged
+          securityContext:
+            allowPrivilegeEscalation: false
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}

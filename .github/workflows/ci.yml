@@ -16,6 +16,19 @@ jobs:
           docker run --rm -v "$PWD:/w" -w /w hadolint/hadolint:v2.15.1
           hadolint backend/Dockerfile frontend/Dockerfile
 
+  # Argo CD применяет всё, что попало в git, — битый шаблон не должен туда дойти
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v4.3.2  # как локально
+      - run: helm lint k8s/helm/calendar
+      - run: helm lint k8s/helm/calendar -f k8s/helm/calendar/values-prod.yaml
+      - run: helm template calendar k8s/helm/calendar > /dev/null
+      - run: helm template calendar k8s/helm/calendar -f k8s/helm/calendar/values-prod.yaml > /dev/null
+
   docker-build:
     needs: docker-lint        # не собираем образы, если Dockerfile не прошёл линтер
     runs-on: ubuntu-latest

@@ -62,3 +62,4 @@ services:
       - "3000:80"
 volumes:
   planner-localdata:
+    name: calendar_planner-localdata  # то же имя, что и было; закреплено, чтобы не зависеть от имени проекта
