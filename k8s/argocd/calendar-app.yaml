@@ -8,7 +8,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/assaup/calendar.git
-    targetRevision: devops/stage-3-k8s  # после мержа — main
+    targetRevision: main
     path: k8s/helm/calendar
     helm:
       releaseName: calendar
