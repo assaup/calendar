@@ -21,8 +21,10 @@ RUN groupadd -g 1000 appgroup \
 
 # pip и setuptools в рантайме не нужны, удаляю: меньше пакетов — меньше CVE
 # версии apt не фиксируем: Debian удаляет старые из репозитория, сборка сломается
+# upgrade: базовый образ отстаёт от патчей Debian, иначе Trivy падает на уже исправленных CVE
 # hadolint ignore=DL3008
 RUN apt-get update \
+    && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends libpq5 \
     && rm -rf /var/lib/apt/lists/* \
     && python -m pip uninstall -y --no-cache-dir setuptools pip
